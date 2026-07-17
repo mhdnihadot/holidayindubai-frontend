@@ -5,8 +5,8 @@ import { adminLoginThunk } from '@/store/thunks/auth.thunks';
 import { toast } from 'sonner';
 
 export const useLogin = () => {
-  const [email, setEmail] = useState('example@gmail.com');
-  const [password, setPassword] = useState('Nihad@123#');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
