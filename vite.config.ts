@@ -11,4 +11,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    allowedHosts: ['www.holidayindubai.com', 'holidayindubai.com', 'localhost'],
+  },
+  preview: {
+    allowedHosts: ['www.holidayindubai.com', 'holidayindubai.com', 'localhost'],
+  }
 })
