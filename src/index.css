@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Yarorg';
+  src: url('./assets/fonts/vladb-yarorg-bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-poppins: "Poppins", sans-serif;
+  --font-yarorg: "Yarorg", sans-serif;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  --animate-shine: shine 3s linear infinite;
+  --animate-typing: typing 1.2s steps(14, end) forwards;
+
+  --color-primary: var(--primary-color);
+  --color-primary-hover: var(--primary-color-hover);
+  --color-primary-light: var(--primary-color-light);
+
+  --color-background: var(--bg-main);
+  --color-surface: var(--surface-main);
+
+  --color-text-main: var(--text-primary);
+  --color-text-muted: var(--text-secondary);
+
+  --color-border-main: var(--border-color);
+  --color-border-subtle: #e7e7e7;
+
+  --color-danger: var(--danger-color);
+  --color-success: var(--success-color);
+  --color-warning: var(--warning-color);
+}
+
+@keyframes shine {
+  from {
+    background-position: 0% center;
+  }
+
+  to {
+    background-position: -200% center;
+  }
+}
+
+@keyframes typing {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+:root {
+  /* Premium Dark/Modern Color Palette Variables */
+  --bg-main: #ffffff;
+  --surface-main: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+
+  --primary-color: #3b82f6;
+  --primary-color-hover: #2563eb;
+  --primary-color-light: #eff6ff;
+  --primary-color-rgb: 59, 130, 246;
+
+  --danger-color: #ef4444;
+  --success-color: #22c55e;
+  --warning-color: #f59e0b;
+}
+
+/* Dark Mode activated by next-themes class */
+.dark {
+  --bg-main: #000000;
+  --surface-main: #171717;
+  --text-primary: #ffffff;
+  --text-secondary: #a3a3a3;
+  --border-color: #262626;
+
+  /* Use white/gray as primary in dark mode to strictly avoid blue */
+  --primary-color: #ffffff;
+  --primary-color-hover: #d4d4d8;
+  --primary-color-light: #27272a;
+}
+
+
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  background-color: white;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+}
