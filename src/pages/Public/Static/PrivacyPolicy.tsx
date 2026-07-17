@@ -1,50 +1,82 @@
 import React from 'react';
 
+const privacyData = {
+  lastUpdated: new Date().toLocaleDateString(),
+  intro: 'At Holiday In Dubai, we take your privacy seriously. This Privacy Policy describes how your personal information is collected, used, processed, and shared when you visit, use our services, or make a booking on our platform (the "Site"). By accessing or using our services, you agree to the terms outlined in this policy.',
+  sections: [
+    {
+      title: '1. Personal Information We Collect',
+      content: [
+        'When you visit the Site, we automatically collect certain information about your device, including information about your web browser, IP address, time zone, and some of the cookies that are installed on your device. As you browse the Site, we collect information about the individual web pages or products that you view, what websites or search terms referred you to the Site, and information about how you interact with the Site.',
+        'Additionally, when you make a booking, purchase a ticket, or register your interest in a tour through the Site, we collect certain information from you, including your name, billing address, email address, phone number, and payment information. We refer to this information as "Order Information".'
+      ]
+    },
+    {
+      title: '2. How Do We Use Your Personal Information?',
+      content: [
+        'We use the Order Information that we collect generally to fulfill any bookings or ticket purchases placed through the Site (including processing your payment information, arranging for tour confirmations, and providing you with invoices and/or booking confirmations).',
+        'Additionally, we use this Order Information to:',
+        '• Communicate with you regarding your bookings or inquiries;',
+        '• Screen our orders for potential risk or fraud; and',
+        '• When in line with the preferences you have shared with us, provide you with information or advertising relating to our holiday packages, tours, and services.'
+      ]
+    },
+    {
+      title: '3. Sharing Your Personal Information',
+      content: [
+        'We share your Personal Information with trusted third parties to help us use your Personal Information, as described above. For example, we use third-party payment processors to securely handle your transactions. We also share information with our tour operators and partners strictly for the purpose of fulfilling your bookings.',
+        'We may also share your Personal Information to comply with applicable laws and regulations, to respond to a subpoena, search warrant or other lawful request for information we receive, or to otherwise protect our rights.'
+      ]
+    },
+    {
+      title: '4. Data Retention and Security',
+      content: [
+        'When you place an order or make a booking through the Site, we will maintain your Order Information for our records unless and until you ask us to delete this information. We implement a variety of security measures, including encryption and secure server hosting, to maintain the safety of your personal information.'
+      ]
+    },
+    {
+      title: '5. Your Rights',
+      content: [
+        'If you are a resident of certain jurisdictions (such as the EEA), you have the right to access the personal information we hold about you and to ask that your personal information be corrected, updated, or deleted. If you would like to exercise this right, please contact us through the contact information below.',
+        'Additionally, we note that we are processing your information in order to fulfill contracts we might have with you (for example if you make a booking through the Site), or otherwise to pursue our legitimate business interests listed above.'
+      ]
+    },
+    {
+      title: '6. Changes to This Privacy Policy',
+      content: [
+        'We may update this privacy policy from time to time in order to reflect, for example, changes to our practices or for other operational, legal, or regulatory reasons. The updated version will be indicated by an updated "Last updated" date and the updated version will be effective as soon as it is accessible.'
+      ]
+    },
+    {
+      title: '7. Contact Us',
+      content: [
+        'For more information about our privacy practices, if you have questions, or if you would like to make a complaint, please contact us by e-mail at hellow@propertyseller.com or by mail using the details provided on our Contact page.'
+      ]
+    }
+  ]
+};
+
 const PrivacyPolicy: React.FC = () => {
   return (
-    <div className="bg-gray-50 min-h-screen py-16 px-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-6 text-center">Privacy Policy</h1>
-        
+    <div className="bg-white min-h-screen font-poppins">
+      <div className="max-w-[1400px] mx-auto  bg-white p-8 md:p-12">
+        <h1 className="text-4xl font-bold text-gray-900 mb-6 text-center pb-3">Privacy Policy</h1>
+
         <div className="prose prose-blue max-w-none text-gray-600">
-          <p className="mb-6">Last updated: {new Date().toLocaleDateString()}</p>
-          
-          <p>
-            At PropertySeller, we take your privacy seriously. This Privacy Policy describes how your personal information is collected, used, and shared when you visit or make a request on our website.
-          </p>
+          {/* <p className="mb-6 font-medium">Last updated: {privacyData.lastUpdated}</p> */}
 
-          <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">1. Personal Information We Collect</h2>
-          <p>
-            When you visit the Site, we automatically collect certain information about your device, including information about your web browser, IP address, time zone, and some of the cookies that are installed on your device.
-          </p>
-          <p>
-            Additionally, when you make an inquiry or register interest in a property through the Site, we collect certain information from you, including your name, email address, and phone number.
-          </p>
+          <p className="mb-8">{privacyData.intro}</p>
 
-          <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">2. How Do We Use Your Personal Information?</h2>
-          <p>
-            We use the inquiry information that we collect generally to fulfill any requests placed through the Site (including contacting you with property details). Additionally, we use this information to:
-          </p>
-          <ul>
-            <li>Communicate with you;</li>
-            <li>Screen our requests for potential risk or fraud; and</li>
-            <li>When in line with the preferences you have shared with us, provide you with information or advertising relating to our products or services.</li>
-          </ul>
-
-          <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">3. Sharing Your Personal Information</h2>
-          <p>
-            We share your Personal Information with third parties to help us use your Personal Information, as described above. We may also share your Personal Information to comply with applicable laws and regulations, to respond to a subpoena, search warrant or other lawful request for information we receive, or to otherwise protect our rights.
-          </p>
-
-          <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">4. Your Rights</h2>
-          <p>
-            If you are a resident of certain jurisdictions, you have the right to access personal information we hold about you and to ask that your personal information be corrected, updated, or deleted. If you would like to exercise this right, please contact us through the contact information below.
-          </p>
-
-          <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">5. Contact Us</h2>
-          <p>
-            For more information about our privacy practices, if you have questions, or if you would like to make a complaint, please contact us by e-mail at privacy@propertyseller.example.com.
-          </p>
+          {privacyData.sections.map((section, index) => (
+            <div key={index} className="mb-8">
+              <h2 className="text-2xl font-semibold text-gray-900 pb-3">{section.title}</h2>
+              {section.content.map((paragraph, pIndex) => (
+                <p key={pIndex} className="mb-3 text-md text-gray-600 leading-relaxed">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     </div>
