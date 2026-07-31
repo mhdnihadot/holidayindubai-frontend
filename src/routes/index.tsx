@@ -10,6 +10,7 @@ import Projects from '@/pages/Projects/Projects';
 import CategoryList from '@/pages/Categories/CategoryList';
 import AddCategory from '@/pages/Categories/AddCategory';
 import Users from '@/pages/Users/Users';
+import Enquiries from '@/pages/Enquiries/Enquiries';
 import Profile from '@/pages/Profile/Profile';
 
 // Public Pages
@@ -56,6 +57,7 @@ export const router = createBrowserRouter([
           { path: 'categories', element: <CategoryList /> },
           { path: 'categories/new', element: <AddCategory /> },
           { path: 'users', element: <Users /> },
+          { path: 'enquiries', element: <Enquiries /> },
           { path: 'profile', element: <Profile /> },
         ],
       },

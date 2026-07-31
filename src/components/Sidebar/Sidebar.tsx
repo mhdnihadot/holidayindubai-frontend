@@ -11,6 +11,7 @@ import {
   IconListing,
   IconAddSmall,
   IconUsers,
+  IconEnquiries,
 } from './Icons';
 
 // --- Types & Configuration ---
@@ -25,6 +26,7 @@ export type SidebarItemConfig = {
 const MAIN_MENU: SidebarItemConfig[] = [
   { label: 'Dashboard', path: '/dashboard', icon: IconDashboard },
   { label: 'Users', path: '/dashboard/users', icon: IconUsers },
+  { label: 'Enquiries', path: '/dashboard/enquiries', icon: IconEnquiries },
   {
     label: 'Projects',
     icon: IconProjects,

@@ -118,6 +118,12 @@ const ProjectDetails: React.FC = () => {
                     <span className="font-semibold text-gray-900">{project.distanceFromCity}</span>
                   </div>
                 )}
+                {project.whatsappNumber && (
+                  <div>
+                    <span className="block text-sm text-gray-500 mb-1">WhatsApp</span>
+                    <span className="font-semibold text-gray-900">{project.whatsappNumber}</span>
+                  </div>
+                )}
               </div>
             </section>
 

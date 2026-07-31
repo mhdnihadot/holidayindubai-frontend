@@ -73,6 +73,12 @@ export const projectFormSchema: FormSchema = [
         placeholder: 'E.g., https://booking.com/...',
       },
       {
+        name: 'whatsappNumber',
+        label: 'WhatsApp Number',
+        type: 'text',
+        placeholder: 'E.g., +971501234567',
+      },
+      {
         name: 'distanceFromCity',
         label: 'Distance from City',
         type: 'text',

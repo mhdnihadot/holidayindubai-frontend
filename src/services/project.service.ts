@@ -21,6 +21,8 @@ export interface Project {
   safetyAndComfort?: { icon: string; title: string; description: string }[];
   accessibility?: { icon: string; title: string; description: string }[];
   experienceSteps?: { title: string; content: string }[];
+  platformUrl?: string;
+  whatsappNumber?: string;
   status: 'active' | 'inactive' | 'completed';
   images: string[];
   createdAt: string;

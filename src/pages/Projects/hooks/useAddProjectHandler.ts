@@ -32,6 +32,8 @@ export const useAddProjectHandler = () => {
       safetyAndComfort: [],
       accessibility: [],
       experienceSteps: [],
+      platformUrl: '',
+      whatsappNumber: '',
       status: 'active' as 'active' | 'inactive' | 'completed',
       images: [],
     },
