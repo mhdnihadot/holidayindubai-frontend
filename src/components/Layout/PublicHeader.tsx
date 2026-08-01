@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Bell, Plus, User, Apple } from 'lucide-react';
+import { Heart, Bell, Plus, User, Apple, Menu, X } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import logo1 from '../../assets/logo-1.png';
 import apiClient from '../../services/apiClient';
 
 const PublicHeader: React.FC = () => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -205,15 +206,15 @@ const PublicHeader: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-white w-full">
-      <div className="max-w-350 mx-auto px-4 sm:px-6 lg:px-8 h-[72px] flex items-center justify-between">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 xl:px-0 h-[72px] flex items-center justify-between">
 
         {/* Left Section: Logo & Nav Links */}
-        <div className="flex items-center gap-10">
-          <Link to="/" className="flex items-center">
-            <img src={logo1} alt="Holiday InDubai" className="h-10 w-auto object-contain" />
+        <div className="flex items-center gap-6 lg:gap-10">
+          <Link to="/" className="flex items-center" onClick={() => setIsMobileMenuOpen(false)}>
+            <img src={logo1} alt="Holiday InDubai" className="h-8 sm:h-9 md:h-10 w-auto object-contain transition-all" />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-6 mt-1">
+          <nav className="hidden lg:flex items-center gap-6 mt-1">
             <Link to="/projects" className="text-gray-700 hover:text-black font-medium text-xs transition-colors">
               Explore
             </Link>
@@ -230,17 +231,17 @@ const PublicHeader: React.FC = () => {
         </div>
 
         {/* Right Section: Actions */}
-        <div className="flex items-center gap-4">
-          <button className="hidden sm:block bg-black hover:bg-gray-800 text-white px-5 py-3 rounded-full text-sm font-medium transition-colors">
+        <div className="flex items-center gap-2 md:gap-3 lg:gap-4">
+          <button className="hidden lg:block bg-black hover:bg-gray-800 text-white px-5 py-3 rounded-full text-sm font-medium transition-colors">
             Top picks
           </button>
-          <button className="hidden sm:flex items-center gap-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-3 py-3 rounded-full text-xs font-medium transition-colors">
+          <button className="hidden md:flex items-center gap-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-3.5 py-2.5 rounded-full text-xs font-medium transition-colors">
             <Plus strokeWidth={1.4} className="w-4 h-4" />
             For Business
           </button>
 
           {/* Icons container */}
-          <div className="flex items-center gap-3 ml-2 relative" ref={dropdownRef}>
+          <div className="flex items-center gap-1 sm:gap-2 md:gap-3 ml-1 sm:ml-2 relative" ref={dropdownRef}>
             <div className="relative" ref={wishlistDropdownRef}>
               <button
                 onClick={() => {
@@ -250,13 +251,13 @@ const PublicHeader: React.FC = () => {
                     setIsWishlistOpen(!isWishlistOpen);
                   }
                 }}
-                className="p-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition-colors"
+                className="p-1.5 sm:p-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition-colors"
               >
                 <Heart strokeWidth={1.4} className="w-5 h-5" />
               </button>
 
               {isWishlistOpen && isLoggedIn && (
-                <div className="absolute top-[120%] right-0 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute top-[120%] right-0 w-[calc(100vw-2rem)] max-w-[320px] sm:w-80 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50 animate-in fade-in zoom-in-95 duration-200">
                   <h4 className="font-bold text-gray-900 mb-3 border-b border-gray-100 pb-2">Your Wishlist</h4>
                   {isLoadingWishlist ? (
                     <div className="flex justify-center py-4"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div></div>
@@ -301,7 +302,7 @@ const PublicHeader: React.FC = () => {
               )}
             </div>
 
-            <button className="p-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition-colors">
+            <button className="p-1.5 sm:p-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition-colors">
               <Bell strokeWidth={1.4} className="w-5 h-5" />
             </button>
 
@@ -354,6 +355,15 @@ const PublicHeader: React.FC = () => {
                 <User className="w-6 h-6" strokeWidth={1} />
               </button>
             )}
+
+            {/* Hamburger Menu Button for Mobile & Tablet */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-1.5 sm:p-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition-colors ml-0.5 sm:ml-1"
+              aria-label="Toggle Menu"
+            >
+              {isMobileMenuOpen ? <X className="w-6 h-6" strokeWidth={1.5} /> : <Menu className="w-6 h-6" strokeWidth={1.5} />}
+            </button>
 
             {/* Auth Modal UI */}
             {isAuthOpen && !isLoggedIn && (
@@ -410,6 +420,76 @@ const PublicHeader: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Mobile & Tablet Navigation Drawer */}
+      {isMobileMenuOpen && (
+        <>
+          <div
+            className="lg:hidden fixed inset-0 top-[72px] bg-black/20 backdrop-blur-[2px] z-40 animate-in fade-in duration-200"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <div className="lg:hidden absolute top-[72px] inset-x-0 bg-white border-b border-gray-200 shadow-2xl px-6 py-6 z-50 animate-in slide-in-from-top-2 duration-300">
+            <nav className="flex flex-col gap-2">
+              <Link
+                to="/projects"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-gray-900 font-semibold text-base py-3 border-b border-gray-100 hover:text-blue-600 transition-colors flex items-center justify-between"
+              >
+                <span>Explore</span>
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+              <Link
+                to="/contact"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-gray-900 font-semibold text-base py-3 border-b border-gray-100 hover:text-blue-600 transition-colors flex items-center justify-between"
+              >
+                <span>Contact</span>
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+              <Link
+                to="/blog"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-gray-900 font-semibold text-base py-3 border-b border-gray-100 hover:text-blue-600 transition-colors flex items-center justify-between"
+              >
+                <span>Blog</span>
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+              <Link
+                to="/news"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-gray-900 font-semibold text-base py-3 border-b border-gray-100 hover:text-blue-600 transition-colors flex items-center justify-between"
+              >
+                <span>News</span>
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </nav>
+
+            <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-2">
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full sm:w-1/2 bg-black hover:bg-gray-800 text-white py-3.5 px-6 rounded-full text-sm font-medium transition-colors text-center shadow-xs"
+              >
+                Top picks
+              </button>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full sm:w-1/2 flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-3.5 px-6 rounded-full text-sm font-medium transition-colors text-center shadow-xs"
+              >
+                <Plus strokeWidth={1.4} className="w-4 h-4" />
+                For Business
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Profile Modal UI */}
       {isProfileModalOpen && isLoggedIn && user && (
