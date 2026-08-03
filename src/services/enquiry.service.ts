@@ -17,6 +17,11 @@ export const enquiryService = {
     const response = await apiClient.get('/enquiry', { headers });
     return response.data.data as EnquiryItem[];
   },
+  createEnquiry: async (data: { projectId: string; name: string; phone: string; message?: string }, token?: string) => {
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await apiClient.post('/enquiry', data, { headers });
+    return response.data;
+  },
   updateStatus: async (id: string, status: string, token?: string) => {
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     const response = await apiClient.patch(`/enquiry/${id}/status`, { status }, { headers });

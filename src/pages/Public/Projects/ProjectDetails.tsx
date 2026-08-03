@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { projectService, type Project } from '@/services/project.service';
+import { adService, type Ad } from '@/services/ad.service';
+import { enquiryService } from '@/services/enquiry.service';
+import CustomSlider from '@/components/ui/CustomSlider';
+import { toast } from 'sonner';
 
 const ProjectDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [ads, setAds] = useState<Ad[]>([]);
 
   // Gallery & Gesture Modal State
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
@@ -14,6 +19,46 @@ const ProjectDetails: React.FC = () => {
   const [activeMobileSlide, setActiveMobileSlide] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  // Enquiry Form State
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [message, setMessage] = useState('');
+  const [isSubmittingEnquiry, setIsSubmittingEnquiry] = useState(false);
+  const [enquirySuccess, setEnquirySuccess] = useState(false);
+
+  const handleEnquirySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !phone.trim()) {
+      toast.error('Please provide both your name and phone number.');
+      return;
+    }
+    if (!(project as any)?._id && !project?.id && !id) {
+      toast.error('Invalid project reference.');
+      return;
+    }
+
+    try {
+      setIsSubmittingEnquiry(true);
+      await enquiryService.createEnquiry({
+        projectId: (project as any)?._id || project?.id || id!,
+        name: name.trim(),
+        phone: phone.trim(),
+        message: message.trim(),
+      });
+      toast.success('Thank you! Your enquiry has been received.');
+      setEnquirySuccess(true);
+      setName('');
+      setPhone('');
+      setMessage('');
+    } catch (error: any) {
+      console.error('Submission Error:', error);
+      const errMsg = error?.response?.data?.message || error?.message || 'Failed to submit enquiry. Please try again.';
+      toast.error(errMsg);
+    } finally {
+      setIsSubmittingEnquiry(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -28,7 +73,22 @@ const ProjectDetails: React.FC = () => {
         setIsLoading(false);
       }
     };
+
+    const fetchAds = async () => {
+      try {
+        const response = await adService.getAll();
+        const data = response.data || response;
+        if (Array.isArray(data)) {
+          const activeAds = data.filter((a: Ad) => a.status === 'active' && (a.websiteImage || a.mobileImage));
+          setAds(activeAds);
+        }
+      } catch (error) {
+        console.error('Failed to fetch advertisements', error);
+      }
+    };
+
     fetchProject();
+    fetchAds();
   }, [id]);
 
   // Keyboard navigation for Lightbox Modal
@@ -95,11 +155,11 @@ const ProjectDetails: React.FC = () => {
       <div className="w-full">
         {/* 1. Mobile View: Premium Overlay Card (< 640px / sm:hidden) */}
         <div className="sm:hidden px-4 pt-3 pb-2">
-          <div className="relative w-full aspect-[4/5] max-h-[560px] bg-gray-900 rounded-[32px] overflow-hidden shadow-xl border border-gray-100">
+          <div className="relative w-full aspect-[4/5] max-h-[560px] bg-gray-900 rounded-[12px] overflow-hidden shadow-xl border border-gray-100">
             {images.length > 0 ? (
               <>
                 <div
-                  className="w-full h-full flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden touch-pan-x"
+                  className="w-full h-full flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden "
                   style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                   onScroll={(e) => {
                     const el = e.currentTarget;
@@ -133,10 +193,10 @@ const ProjectDetails: React.FC = () => {
                     setCurrentImageIndex(activeMobileSlide);
                     setIsGalleryModalOpen(true);
                   }}
-                  className="absolute top-4 left-4 z-20 bg-black/50 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/15 shadow-md flex items-center gap-1.5 focus:outline-none"
+                  className="absolute top-4 left-4 z-20 bg-black/50 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/15 shadow-md flex items-center gap-1.5 focus:outline-none"
                 >
                   <svg className="w-3.5 h-3.5 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <span>{activeMobileSlide + 1} / {images.length}</span>
                 </button>
@@ -147,10 +207,10 @@ const ProjectDetails: React.FC = () => {
                     e.stopPropagation();
                     // Interactive visual toggle for wishlist
                   }}
-                  className="absolute top-4 right-4 z-20 w-11 h-11 bg-white rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:text-red-500 transition-transform active:scale-90 focus:outline-none"
+                  className="absolute top-4 right-4 z-20 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:text-red-500 transition-transform active:scale-90 focus:outline-none"
                   aria-label="Save project"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
                 </button>
@@ -163,19 +223,19 @@ const ProjectDetails: React.FC = () => {
                   {/* Location Row */}
                   <div className="flex items-center gap-1.5 text-gray-200 text-xs sm:text-sm font-medium mb-1.5 drop-shadow-xs">
                     <svg className="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <span className="truncate">{project.location || project.emirate || 'Dubai, United Arab Emirates'}</span>
                   </div>
 
                   {/* Title & Price/Status Row */}
                   <div className="flex items-baseline justify-between gap-3 mb-3.5">
-                    <h1 className="text-2xl font-bold text-white leading-tight drop-shadow-md line-clamp-2 flex-1">
+                    <h1 className="text-2xl font-semibold text-white leading-tight drop-shadow-md line-clamp-2 flex-1">
                       {project.title}
                     </h1>
                     {project.status && (
-                      <span className="text-[#E2F736] font-extrabold text-base whitespace-nowrap shrink-0 drop-shadow-md uppercase tracking-wider">
+                      <span className="text-white font-semibold text-lg whitespace-nowrap shrink-0 drop-shadow-md  capitalize">
                         {project.status}
                       </span>
                     )}
@@ -184,30 +244,30 @@ const ProjectDetails: React.FC = () => {
                   {/* Specs & Badges Pill Row */}
                   <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden pb-0.5">
                     {project.category && (
-                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
+                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
                         <svg className="w-3.5 h-3.5 text-[#E2F736]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                         </svg>
                         {project.category}
                       </span>
                     )}
                     {project.emirate && (
-                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
+                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
                         📍 {project.emirate}
                       </span>
                     )}
                     {project.duration && (
-                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
+                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
                         ⏱️ {project.duration}
                       </span>
                     )}
                     {project.bestTime && (
-                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
+                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
                         ✨ {project.bestTime}
                       </span>
                     )}
                     {!project.duration && !project.bestTime && (
-                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
+                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
                         ⭐ 4.9 Rated
                       </span>
                     )}
@@ -421,7 +481,7 @@ const ProjectDetails: React.FC = () => {
       )}
 
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 xl:px-0 py-4 sm:py-8 pb-28 sm:pb-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 bg-white lg:grid-cols-3 gap-8 lg:gap-12">
 
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
@@ -644,7 +704,7 @@ const ProjectDetails: React.FC = () => {
             ) : null}
 
             {/* Gallery */}
-            {project.images && project.images.length > 1 && (
+            {/* {project.images && project.images.length > 1 && (
               <section>
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Gallery</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -663,22 +723,104 @@ const ProjectDetails: React.FC = () => {
                   ))}
                 </div>
               </section>
-            )}
+            )} */}
 
           </div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div id="property-contact-sidebar" className="sticky top-24 bg-white rounded-lg shadow-xs border border-gray-200 p-5 sm:p-6">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 pb-1">Interested in this property?</h3>
-              <p className="text-gray-500 mb-5 sm:mb-6 text-xs sm:text-sm leading-relaxed">Contact our expert agents today to schedule a viewing or request more information.</p>
+          <div className="lg:col-span-1 space-y-6">
+            <div className="sticky top-24 space-y-6">
+              <div id="property-contact-sidebar" className="bg-white rounded-xl shadow-xs border border-gray-200 p-5 sm:p-6">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 pb-1">Interested in this property?</h3>
+                <p className="text-gray-500 mb-5 text-xs sm:text-sm leading-relaxed">
+                  Contact our expert agents today to schedule a viewing or request more information.
+                </p>
 
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors mb-3 shadow-md shadow-blue-600/20 active:scale-95">
-                Register Interest
-              </button>
-              <button className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 py-3 px-4 rounded-lg font-medium transition-colors active:scale-95">
-                Download Brochure
-              </button>
+                {enquirySuccess ? (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center my-2 space-y-2">
+                    <div className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto shadow-sm">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <h4 className="font-semibold text-green-900 text-base">Enquiry Submitted!</h4>
+                    <p className="text-xs text-green-700 leading-normal">
+                      Thank you! Your enquiry has been received. Our tourism specialist will get back to you shortly.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setEnquirySuccess(false)}
+                      className="text-xs font-semibold text-green-800 hover:text-green-900 underline pt-1"
+                    >
+                      Send another enquiry
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleEnquirySubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                        Your Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Enter your full name"
+                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                        Phone Number (WhatsApp / Call) <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="Enter your contact number"
+                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                        What would you like to know? (Optional)
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder="E.g., group booking rates, itinerary details, date availability..."
+                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all resize-none"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmittingEnquiry}
+                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white py-3 px-4 rounded-lg font-semibold transition-all shadow-md shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      {isSubmittingEnquiry ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                          <span>Submitting...</span>
+                        </>
+                      ) : (
+                        <span>Submit Enquiry</span>
+                      )}
+                    </button>
+                  </form>
+                )}
+              </div>
+
+              {/* Featured Advertisements Carousel Section */}
+              {ads.length > 0 && <CustomSlider images={ads} />}
             </div>
           </div>
 

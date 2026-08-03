@@ -7,6 +7,7 @@ import UserLogin from '@/pages/Public/Login/UserLogin';
 
 import DashboardOverview from '@/pages/Dashboard/DashboardOverview';
 import Projects from '@/pages/Projects/Projects';
+import Ads from '@/pages/Ads/Ads';
 import CategoryList from '@/pages/Categories/CategoryList';
 import AddCategory from '@/pages/Categories/AddCategory';
 import Users from '@/pages/Users/Users';
@@ -54,6 +55,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <DashboardOverview /> },
           { path: 'projects/*', element: <Projects /> },
+          { path: 'ads/*', element: <Ads /> },
           { path: 'categories', element: <CategoryList /> },
           { path: 'categories/new', element: <AddCategory /> },
           { path: 'users', element: <Users /> },

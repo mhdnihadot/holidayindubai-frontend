@@ -12,6 +12,7 @@ import {
   IconAddSmall,
   IconUsers,
   IconEnquiries,
+  IconAds,
 } from './Icons';
 
 // --- Types & Configuration ---
@@ -33,6 +34,14 @@ const MAIN_MENU: SidebarItemConfig[] = [
     children: [
       { label: 'Listing', path: '/dashboard/projects', icon: IconListing },
       { label: 'Add Project', path: '/dashboard/projects/add', icon: IconAddSmall },
+    ],
+  },
+  {
+    label: 'Ads & Banners',
+    icon: IconAds,
+    children: [
+      { label: 'Listing', path: '/dashboard/ads', icon: IconListing },
+      { label: 'Add Ad', path: '/dashboard/ads/add', icon: IconAddSmall },
     ],
   },
 ];

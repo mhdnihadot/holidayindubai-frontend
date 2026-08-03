@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, UploadCloud } from 'lucide-react';
+import { Trash2, UploadCloud, Loader2 } from 'lucide-react';
 import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
 import { toast } from 'sonner';
 
@@ -37,6 +37,7 @@ export const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [originalFileName, setOriginalFileName] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   React.useEffect(() => {
     if (value instanceof File) {
@@ -79,37 +80,78 @@ export const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
     e.target.value = '';
   };
 
-  const handleCropComplete = (croppedBlob: Blob) => {
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setIsCropperOpen(false);
     const originalName = originalFileName || 'image.jpg';
     const baseName = originalName.substring(0, originalName.lastIndexOf('.')) || 'image';
     const webpFileName = `${baseName}.webp`;
     
     const fileObject = new File([croppedBlob], webpFileName, { type: 'image/webp' });
-    onChange(fileObject);
-    setIsCropperOpen(false);
+    
+    setIsUploading(true);
+    try {
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+      
+      if (!cloudName || !uploadPreset || cloudName === 'your_cloud_name') {
+        throw new Error('Cloudinary configuration missing in .env file.');
+      }
+
+      const formData = new FormData();
+      formData.append('file', fileObject);
+      formData.append('upload_preset', uploadPreset);
+
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || 'Failed to upload image to Cloudinary');
+      }
+      const data = await res.json();
+      onChange(data.secure_url);
+      toast.success('Image uploaded successfully!');
+    } catch (error: any) {
+      console.error('Cloudinary upload failed:', error);
+      toast.error(error.message || 'Failed to upload image. Please check Cloudinary config.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const widthStyle = previewWidth !== undefined 
     ? (typeof previewWidth === 'number' ? `${previewWidth}px` : previewWidth) 
     : (cropWidth ? `${cropWidth}px` : undefined);
     
-  const heightStyle = previewHeight !== undefined 
+  const heightStyle = previewHeight !== undefined && previewHeight !== 'auto'
     ? (typeof previewHeight === 'number' ? `${previewHeight}px` : previewHeight) 
     : undefined;
 
   return (
     <div 
-      className="relative border-2 border-dashed border-border-subtle dark:border-gray-700 rounded-xl bg-[#f8fafc] dark:bg-[#0f172a]/50 hover:border-blue-600/50 transition-colors group overflow-hidden mt-2"
+      className={`relative border-2 border-dashed border-border-subtle dark:border-gray-700 rounded-xl bg-[#f8fafc] dark:bg-[#0f172a]/50 hover:border-blue-600/50 transition-colors group overflow-hidden mt-2 ${heightStyle ? '' : 'min-h-[220px]'}`}
       style={{ 
-        width: widthStyle, 
+        width: widthStyle || '100%', 
         height: heightStyle, 
         maxWidth: '100%',
         aspectRatio: heightStyle ? undefined : resolvedAspectRatio
       }}
     >
+      {isUploading ? (
+        <div className="absolute inset-0 z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xs flex flex-col items-center justify-center gap-3 p-4">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <div className="text-center">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">Uploading to Cloudinary...</p>
+            <p className="text-xs text-gray-500 mt-0.5">Please wait while your banner is processed and hosted</p>
+          </div>
+        </div>
+      ) : null}
+
       {value ? (
         <div className="relative w-full h-full overflow-hidden">
-          <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+          <img src={previewUrl} alt="Preview" className="w-full h-full object-cover object-center" />
 
           <button
             type="button"
@@ -132,6 +174,7 @@ export const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
             type="file"
             accept="image/png, image/jpeg, image/jpg, image/webp, image/avif"
             onChange={handleImageChange}
+            disabled={isUploading}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
           />
         </div>
@@ -150,6 +193,7 @@ export const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
             type="file"
             accept="image/png, image/jpeg, image/jpg, image/webp, image/avif"
             onChange={handleImageChange}
+            disabled={isUploading}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           />
         </div>
