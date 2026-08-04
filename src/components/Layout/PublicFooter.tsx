@@ -87,7 +87,7 @@ const PublicFooter: React.FC = () => {
 
         {/* Copyright Bottom Bar */}
         <div className="pt-6 pb-2 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-400 gap-4">
-          <p>© {new Date().getFullYear()} Holiday In Dubai. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} HolidayInDubai.com All rights reserved.</p>
           <div className="flex items-center gap-4 text-xs">
             <span>Made with precision for explorers</span>
           </div>
