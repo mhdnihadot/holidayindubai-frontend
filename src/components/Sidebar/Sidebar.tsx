@@ -13,6 +13,7 @@ import {
   IconUsers,
   IconEnquiries,
   IconAds,
+  IconMenu,
 } from './Icons';
 
 // --- Types & Configuration ---
@@ -28,6 +29,14 @@ const MAIN_MENU: SidebarItemConfig[] = [
   { label: 'Dashboard', path: '/dashboard', icon: IconDashboard },
   { label: 'Users', path: '/dashboard/users', icon: IconUsers },
   { label: 'Enquiries', path: '/dashboard/enquiries', icon: IconEnquiries },
+  {
+    label: 'Categories',
+    icon: IconMenu,
+    children: [
+      { label: 'Listing', path: '/dashboard/categories', icon: IconListing },
+      { label: 'Add Category', path: '/dashboard/categories/new', icon: IconAddSmall },
+    ],
+  },
   {
     label: 'Projects',
     icon: IconProjects,

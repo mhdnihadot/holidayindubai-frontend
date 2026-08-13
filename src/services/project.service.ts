@@ -30,13 +30,18 @@ export interface Project {
 }
 
 export const projectService = {
-  getAll: async () => {
-    const response = await apiClient.get('/project');
+  getAll: async (params?: any) => {
+    const response = await apiClient.get('/project', { params });
     return response.data;
   },
   
   getById: async (id: string) => {
     const response = await apiClient.get(`/project/${id}`);
+    return response.data;
+  },
+
+  getCountsByEmirate: async () => {
+    const response = await apiClient.get('/project/emirate/counts');
     return response.data;
   }
 };

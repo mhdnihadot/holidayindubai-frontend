@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { projectService, type Project } from '@/services/project.service';
 import { Heart } from 'lucide-react';
 import apiClient from '@/services/apiClient';
@@ -9,6 +9,9 @@ const ProjectList: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const [searchParams] = useSearchParams();
+  const emirateParam = searchParams.get('emirate');
+  const categoryParam = searchParams.get('category');
 
   // Load user's wishlist on mount and listen to storage events
   useEffect(() => {
@@ -76,7 +79,16 @@ const ProjectList: React.FC = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await projectService.getAll();
+        setIsLoading(true);
+        const params: any = {};
+        if (emirateParam) {
+          params.emirate = emirateParam;
+        }
+        if (categoryParam) {
+          params.category = categoryParam;
+        }
+        
+        const response = await projectService.getAll(params);
         const data = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
         setProjects(data);
       } catch (error) {
@@ -86,15 +98,15 @@ const ProjectList: React.FC = () => {
       }
     };
     fetchProjects();
-  }, []);
+  }, [emirateParam, categoryParam]);
 
   return (
     <div className="bg-white min-h-screen py-12 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="mb-10 text-center">
-          <h1 className="text-4xl font-semibold text-gray-900 pb-3">All Projects</h1>
+          <h1 className="text-4xl font-semibold text-gray-900 pb-3">Explore Activities</h1>
           <p className="text-gray-500 max-w-2xl mx-auto text-lg">
-            Discover our complete portfolio of luxury properties and exclusive developments across Dubai.
+            Immerse yourself in unforgettable experiences and discover the best tourism activities Dubai has to offer.
           </p>
         </div>
 
@@ -107,7 +119,7 @@ const ProjectList: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {projects.map((project) => (
-              <Link to={`/projects/${project.id}`} key={project.id} className="group bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-100 flex flex-col h-full">
+              <Link to={`/projects/${project.id}`} key={project.id} className="group bg-white rounded-lg overflow-hidden shadow-xs hover:shadow-xl transition-all border border-gray-100 flex flex-col h-full">
                 <div className="relative h-64 overflow-hidden bg-gray-200">
                   {project.images && project.images.length > 0 ? (
                     <img

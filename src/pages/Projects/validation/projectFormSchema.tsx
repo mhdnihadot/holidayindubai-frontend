@@ -2,6 +2,7 @@ import type { FormSchema } from '@/components/DynamicForm/types';
 import { DynamicIconList } from '@/components/DynamicForm/DynamicIconList';
 import { DynamicStepsList } from '@/components/DynamicForm/DynamicStepsList';
 import { GoogleMapPreviewInput } from '@/components/DynamicForm/GoogleMapPreviewInput';
+import { CategoryAutocompleteInput } from '@/components/DynamicForm/CategoryAutocompleteInput';
 
 export const projectFormSchema: FormSchema = [
   {
@@ -107,8 +108,10 @@ export const projectFormSchema: FormSchema = [
       {
         name: 'category',
         label: 'Category',
-        type: 'text',
-        placeholder: 'E.g., Water & Marine Activities',
+        type: 'custom',
+        customRender: ({ value, onChange }) => (
+          <CategoryAutocompleteInput value={value} onChange={onChange} />
+        ),
       },
       {
         name: 'duration',

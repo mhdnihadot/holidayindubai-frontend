@@ -1,59 +1,80 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { projectService } from '../../services/project.service';
 
-const emirates = [
+const INITIAL_EMIRATES = [
   {
     id: 1,
     name: 'Dubai',
-    experiences: 654,
+    experiences: 0,
     distance: '62 Km',
     image: '/images/emirates/dubai_tourist_1784109879840.png',
   },
   {
+    id: 7,
+    name: 'Abu Dhabi',
+    experiences: 0,
+    distance: '62 Km',
+    image: '/images/emirates/abudhabi_tourist_1784109954112.png',
+  },
+  {
     id: 2,
     name: 'Sharjah',
-    experiences: 654,
+    experiences: 0,
     distance: '62 Km',
     image: '/images/emirates/sharjah_tourist_1784109891738.png',
   },
   {
+    id: 5,
+    name: 'Ras Al Khaimah',
+    experiences: 0,
+    distance: '62 Km',
+    image: '/images/emirates/rak_tourist_1784109929657.png',
+  },
+  {
     id: 3,
     name: 'Ajman',
-    experiences: 654,
+    experiences: 0,
     distance: '62 Km',
     image: '/images/emirates/ajman_tourist_1784109903047.png',
   },
   {
     id: 4,
     name: 'Umm Al Quwain',
-    experiences: 654,
+    experiences: 0,
     distance: '62 Km',
     image: '/images/emirates/uaq_tourist_1784109917460.png',
   },
   {
-    id: 5,
-    name: 'Ras Al Khaimah',
-    experiences: 654,
-    distance: '62 Km',
-    image: '/images/emirates/rak_tourist_1784109929657.png',
-  },
-  {
     id: 6,
     name: 'Fujairah',
-    experiences: 654,
+    experiences: 0,
     distance: '62 Km',
     image: '/images/emirates/fujairah_tourist_1784109941282.png',
-  },
-  {
-    id: 7,
-    name: 'Abu Dhabi',
-    experiences: 654,
-    distance: '62 Km',
-    image: '/images/emirates/abudhabi_tourist_1784109954112.png',
   },
 ];
 
 const EmirateFilter: React.FC = () => {
+  const [emirates, setEmirates] = useState(INITIAL_EMIRATES);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const response = await projectService.getCountsByEmirate();
+        if (response && response.data) {
+          const counts = response.data;
+          setEmirates(prev => prev.map(emp => {
+            const match = counts.find((c: any) => c._id === emp.name);
+            return { ...emp, experiences: match ? match.count : 0 };
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch emirate counts', error);
+      }
+    };
+    fetchCounts();
+  }, []);
+
   return (
     <div className="w-full">
       {/* Mobile View: Horizontal Scrollable Carousel (< 640px) */}
