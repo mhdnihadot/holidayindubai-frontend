@@ -121,9 +121,12 @@ const GroupedExperiences: React.FC<GroupedExperiencesProps> = ({ projects }) => 
     return null;
   }
 
+  // Sort categories by the number of projects (descending)
+  const sortedCategories = Object.entries(groupedProjects).sort((a, b) => b[1].length - a[1].length);
+
   return (
     <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 xl:px-0 pb-10">
-      {Object.entries(groupedProjects).map(([category, items]) => (
+      {sortedCategories.map(([category, items]) => (
         <div key={category} className="mb-10 sm:mb-12">
           {/* Section Header */}
           <div className="flex items-center mb-4 sm:mb-6">
