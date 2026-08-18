@@ -8,7 +8,7 @@ import { getAdFormSchema } from './validation/adFormSchema';
 const AddAd: React.FC = () => {
   const { formik, isLoading, projectOptions, handleDiscard, handleSave } = useAddAdHandler();
 
-  const schema = useMemo(() => getAdFormSchema(projectOptions), [projectOptions]);
+  const schema = useMemo(() => getAdFormSchema(projectOptions, formik.values), [projectOptions, formik.values]);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

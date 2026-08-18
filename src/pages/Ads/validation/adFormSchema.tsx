@@ -1,6 +1,6 @@
 import type { FormSchema } from '@/components/DynamicForm/types';
 
-export const getAdFormSchema = (projectOptions: { label: string; value: string }[] = []): FormSchema => [
+export const getAdFormSchema = (projectOptions: { label: string; value: string }[] = [], values?: any): FormSchema => [
   {
     title: 'Advertisement Banner Images',
     description: 'Pick and upload promotional banner images for Desktop Website and/or Mobile App. You may choose to provide either one or both depending on your targeted platforms.',
@@ -37,13 +37,21 @@ export const getAdFormSchema = (projectOptions: { label: string; value: string }
   },
   {
     title: 'Connected Project & Settings',
-    description: 'Link this advertisement to a specific project so users are immediately redirected when they tap or click the banner.',
+    description: 'Link this advertisement to a specific project so users are immediately redirected when they tap or click the banner. Alternatively, you can provide an external URL to redirect them instead.',
     fields: [
       {
         name: 'project',
-        label: 'Select Connected Project',
+        label: 'Select Connected Project (Optional)',
         type: 'select',
+        disabled: !!values?.url,
         options: projectOptions.length > 0 ? projectOptions : [{ label: 'Select a connected project (or None)', value: '' }],
+      },
+      {
+        name: 'url',
+        label: 'External Redirect URL (Optional)',
+        type: 'text',
+        disabled: !!values?.project,
+        placeholder: 'e.g., https://example.com (used if no project is selected)',
       },
       {
         name: 'order',

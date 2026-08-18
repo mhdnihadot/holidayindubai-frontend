@@ -160,8 +160,13 @@ const AdList: React.FC = () => {
                             <Link2 className="w-3.5 h-3.5" />
                             <span>Project: {typeof ad.project === 'object' ? ad.project.title || `ID: ${ad.project._id || ad.project.id}` : `ID: ${ad.project}`}</span>
                           </span>
+                        ) : ad.url ? (
+                          <span className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800/60 shadow-2xs">
+                            <Link2 className="w-3.5 h-3.5" />
+                            <a href={ad.url} target="_blank" rel="noopener noreferrer" className="hover:underline max-w-[200px] sm:max-w-[300px] truncate block">URL: {ad.url}</a>
+                          </span>
                         ) : (
-                          <span className="text-xs text-gray-400 italic block mt-1">No connected project</span>
+                          <span className="text-xs text-gray-400 italic block mt-1">No connection (No project or URL)</span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-medium">

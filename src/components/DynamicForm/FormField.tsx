@@ -39,7 +39,8 @@ export const FormField: React.FC<FormFieldProps> = ({ field, value, onChange, on
           onChange={handleChange}
           onBlur={onBlur}
           placeholder={field.placeholder}
-          className={baseInputClass}
+          disabled={field.disabled}
+          className={`${baseInputClass} ${field.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           {...(field.extraProps || { rows: 4 })}
         />
       );
@@ -188,7 +189,8 @@ export const FormField: React.FC<FormFieldProps> = ({ field, value, onChange, on
         onChange={handleChange}
         onBlur={onBlur}
         placeholder={field.placeholder}
-        className={baseInputClass}
+        disabled={field.disabled}
+        className={`${baseInputClass} ${field.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         {...(field.extraProps || {})}
       />
     );

@@ -6,6 +6,7 @@ export interface Ad {
   websiteImage: string;
   mobileImage: string;
   project?: any;
+  url?: string;
   order?: number;
   status: 'active' | 'inactive';
   createdAt?: string;

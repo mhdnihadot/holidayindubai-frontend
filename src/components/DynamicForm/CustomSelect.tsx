@@ -36,8 +36,12 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   return (
     <div className="relative" ref={dropdownRef}>
       <div
-        className={`${baseInputClass} pr-10 cursor-pointer flex items-center justify-between ${!selectedOption ? 'text-gray-400 dark:text-gray-500' : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
+        className={`${baseInputClass} pr-10 ${field.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} flex items-center justify-between ${!selectedOption ? 'text-gray-400 dark:text-gray-500' : ''}`}
+        onClick={() => {
+          if (!field.disabled) {
+            setIsOpen(!isOpen);
+          }
+        }}
       >
         <span className="truncate">{selectedOption ? selectedOption.label : (field.placeholder || 'Select...')}</span>
         <ChevronDown size={18} className={`transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''} text-gray-400`} />

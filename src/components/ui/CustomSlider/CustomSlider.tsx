@@ -26,13 +26,25 @@ const CustomSliderComponent = (props: CustomSliderProps) => {
       : `/projects/${currentImage.project}`
     : "#";
 
+  const isExternalUrl = !!currentImage?.url;
+  const Wrapper = isExternalUrl ? "a" : Link;
+  const wrapperProps: any = isExternalUrl
+    ? {
+        href: currentImage.url,
+        target: "_blank",
+        rel: "noopener noreferrer",
+      }
+    : {
+        to: destination,
+        onClick: (e: any) => {
+          if (destination === "#") e.preventDefault();
+          handleClick(currentImage._id || currentImage.id);
+        },
+      };
+
   return (
-    <Link
-      onClick={(e) => {
-        if (destination === "#") e.preventDefault();
-        handleClick(currentImage._id || currentImage.id);
-      }}
-      to={destination}
+    <Wrapper
+      {...wrapperProps}
       className={`relative flex w-full overflow-hidden ${containerClassName}`}
     >
       <div className={`relative w-full ${heightClassName || "h-[120px] sm:h-[550px]"}`}>
@@ -52,7 +64,7 @@ const CustomSliderComponent = (props: CustomSliderProps) => {
           </motion.div>
         </AnimatePresence>
       </div>
-    </Link>
+    </Wrapper>
   );
 };
 

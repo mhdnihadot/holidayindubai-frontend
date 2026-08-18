@@ -20,6 +20,7 @@ export interface FormFieldConfig {
   type?: FieldType;
   placeholder?: string;
   defaultValue?: any;
+  disabled?: boolean;
   validation?: {
     required?: boolean | string;
     minLength?: number;

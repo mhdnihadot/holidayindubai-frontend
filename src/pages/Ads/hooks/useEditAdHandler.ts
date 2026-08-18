@@ -82,6 +82,7 @@ export const useEditAdHandler = () => {
             websiteImage: ad.websiteImage || '',
             mobileImage: ad.mobileImage || '',
             project: projectId,
+            url: ad.url || '',
             order: ad.order ?? 1,
             status: ad.status || 'active',
           };

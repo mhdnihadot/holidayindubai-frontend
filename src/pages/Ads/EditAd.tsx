@@ -9,7 +9,7 @@ import { getAdFormSchema } from './validation/adFormSchema';
 const EditAd: React.FC = () => {
   const { formik, isLoading, isFetching, projectOptions, handleDiscard, handleSave } = useEditAdHandler();
 
-  const schema = useMemo(() => getAdFormSchema(projectOptions), [projectOptions]);
+  const schema = useMemo(() => getAdFormSchema(projectOptions, formik.values), [projectOptions, formik.values]);
 
   if (isFetching) {
     return (
