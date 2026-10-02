@@ -1,7 +1,9 @@
 import React from 'react';
+import { useSeo } from '@/hooks/useSeo';
 import { Link } from 'react-router-dom';
 
 const About: React.FC = () => {
+  useSeo({ title: 'About Us', path: '/about', description: 'Learn about HolidayInDubai – your guide to the best attractions, tours and experiences in Dubai and across the UAE.' });
   return (
     <div className="bg-white max-w-[1200px] px-4 sm:px-0 mx-auto min-h-screen py-12 text-gray-800 selection:bg-gray-100">
       <div className="w-full mx-auto">

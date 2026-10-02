@@ -561,18 +561,9 @@ const PublicHeader: React.FC = () => {
             </nav>
 
             <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-2">
-              <a
-                href="https://www.propertyseller.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full sm:w-1/2 bg-gray-900 hover:bg-gray-800 text-white py-3.5 px-6 rounded-full text-sm font-medium transition-colors text-center"
-              >
-                Invest in Dubai
-              </a>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full sm:w-1/2 flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-3.5 px-6 rounded-full text-sm font-medium transition-colors text-center shadow-xs"
+                className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-3.5 px-6 rounded-full text-sm font-medium transition-colors text-center shadow-xs"
               >
                 <Plus strokeWidth={1.5} className="w-4 h-4" />
                 For Business

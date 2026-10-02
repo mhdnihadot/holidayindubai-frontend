@@ -3,11 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { type Project } from '@/services/project.service';
 import { fetchProject as fetchProjectCached, getCachedProject } from '@/services/projectCache';
 import { adService, type Ad } from '@/services/ad.service';
-import { enquiryService } from '@/services/enquiry.service';
 import CustomSlider from '@/components/ui/CustomSlider';
 import { ProjectDetailsSkeleton } from '@/components/ui/ProjectDetailsSkeleton';
-import { toast } from 'sonner';
-import { Accessibility, CalendarDays, Check, Clock, Compass, Lock, Map as MapIcon, MapPin, MessageCircle, Navigation, Sun, MessageSquare, Phone, Send, User, ShieldCheck, Shirt, X } from 'lucide-react';
+import { CategoryRow } from '@/components/ui/GroupedExperiences';
+import { useWishlist } from '@/hooks/useWishlist';
+import { useSeo } from '@/hooks/useSeo';
+import { projectService } from '@/services/project.service';
+import { seedProjects } from '@/services/projectCache';
+import { Accessibility, CalendarDays, Check, Clock, Compass, Map as MapIcon, MapPin, MessageCircle, Navigation, Sun, Phone, Heart, ShieldCheck } from 'lucide-react';
 
 const ProjectDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -21,48 +24,16 @@ const ProjectDetails: React.FC = () => {
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [activeMobileSlide, setActiveMobileSlide] = useState(0);
+  // Mobile gallery: which photos have finished loading (shimmer shows until then)
+  const [loadedSlides, setLoadedSlides] = useState<Record<number, boolean>>({});
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
-  // Enquiry Form State
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [message, setMessage] = useState('');
-  const [isSubmittingEnquiry, setIsSubmittingEnquiry] = useState(false);
-  const [enquirySuccess, setEnquirySuccess] = useState(false);
-
-  const handleEnquirySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !phone.trim()) {
-      toast.error('Please provide both your name and phone number.');
-      return;
-    }
-    if (!(project as any)?._id && !project?.id && !id) {
-      toast.error('Invalid project reference.');
-      return;
-    }
-
-    try {
-      setIsSubmittingEnquiry(true);
-      await enquiryService.createEnquiry({
-        projectId: (project as any)?._id || project?.id || id!,
-        name: name.trim(),
-        phone: phone.trim(),
-        message: message.trim(),
-      });
-      toast.success('Thank you! Your enquiry has been received.');
-      setEnquirySuccess(true);
-      setName('');
-      setPhone('');
-      setMessage('');
-    } catch (error: any) {
-      console.error('Submission Error:', error);
-      const errMsg = error?.response?.data?.message || error?.message || 'Failed to submit enquiry. Please try again.';
-      toast.error(errMsg);
-    } finally {
-      setIsSubmittingEnquiry(false);
-    }
-  };
+  // New project → fresh gallery state
+  useEffect(() => {
+    setLoadedSlides({});
+    setActiveMobileSlide(0);
+  }, [id]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -88,6 +59,53 @@ const ProjectDetails: React.FC = () => {
 
     fetchProject();
   }, [id]);
+
+  const { wishlist, toggleWishlist } = useWishlist();
+
+  // SEO: "<Experience> – <Emirate> | HolidayInDubai"
+  useSeo({
+    title: project ? [project.title, project.emirate].filter(Boolean).join(' – ') : undefined,
+    description: project ? (project.subtitle ? `${project.subtitle}. ` : '') + (project.description || '') : undefined,
+    path: id ? `/projects/${id}` : undefined,
+    image: project?.images?.[0],
+    type: 'article',
+  });
+  const [suggestions, setSuggestions] = useState<Project[]>([]);
+
+  // "You may also like" — same category first, then same emirate. Fetched after the page is on screen.
+  const suggestionKey = project ? `${(project as any)._id || project.id}|${project.category ?? ''}|${project.emirate ?? ''}` : '';
+  useEffect(() => {
+    if (!project) return;
+    let cancelled = false;
+    const currentId = (project as any)._id || project.id;
+    const load = async () => {
+      try {
+        const pick = (res: any): Project[] => {
+          const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+          return list.filter((p: Project) => ((p as any)._id || p.id) !== currentId);
+        };
+        let list: Project[] = project.category ? pick(await projectService.getAll({ category: project.category })) : [];
+        if (list.length < 2 && project.emirate) {
+          const byEmirate = pick(await projectService.getAll({ emirate: project.emirate }));
+          const seen = new Set(list.map((p) => p.id));
+          list = [...list, ...byEmirate.filter((p) => !seen.has(p.id))];
+        }
+        if (!cancelled) {
+          seedProjects(list);
+          setSuggestions(list);
+        }
+      } catch (error) {
+        console.error('Failed to fetch suggestions', error);
+      }
+    };
+    const w = window as any;
+    const handle = w.requestIdleCallback ? w.requestIdleCallback(load, { timeout: 2500 }) : setTimeout(load, 400);
+    return () => {
+      cancelled = true;
+      if (w.cancelIdleCallback) w.cancelIdleCallback(handle); else clearTimeout(handle);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestionKey]);
 
   // Sidebar ads are secondary — fetch them once the page content is on screen
   const hasProject = !!project;
@@ -145,6 +163,35 @@ const ProjectDetails: React.FC = () => {
     }
   };
 
+  // Contact: WhatsApp + Call both use the project's whatsappNumber. Buttons always show;
+  // when a project has no number they simply do nothing.
+  const contactDigits = project?.whatsappNumber?.replace(/\D/g, '') || '';
+  const whatsappHref = contactDigits
+    ? `https://wa.me/${contactDigits}?text=${encodeURIComponent(`Hi, I'm interested in ${project?.title ?? 'this experience'}`)}`
+    : undefined;
+  const callHref = contactDigits ? `tel:+${contactDigits}` : undefined;
+
+  const ContactButtons = ({ size = 'md', whatsappOnly = false }: { size?: 'sm' | 'md'; whatsappOnly?: boolean }) => {
+    const base = `flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 text-white font-semibold whitespace-nowrap transition-colors ${size === 'sm' ? 'h-10 px-3 text-sm' : 'h-11 px-4 text-sm'
+      } ${contactDigits ? 'hover:bg-gray-800 active:bg-gray-700' : 'cursor-default'}`;
+    const iconCls = size === 'sm' ? 'w-4 h-4' : 'w-[18px] h-[18px]';
+    const noop = (e: React.MouseEvent) => { if (!contactDigits) e.preventDefault(); };
+    return (
+      <>
+        <a href={whatsappHref} target={whatsappHref ? '_blank' : undefined} rel="noopener noreferrer" onClick={noop} className={base} aria-label="Chat on WhatsApp">
+          <svg className={iconCls} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
+          WhatsApp
+        </a>
+        {!whatsappOnly && (
+          <a href={callHref} onClick={noop} className={base} aria-label="Call">
+            <Phone className={iconCls} strokeWidth={1.5} />
+            Call
+          </a>
+        )}
+      </>
+    );
+  };
+
   if (isLoading) {
     return <ProjectDetailsSkeleton />;
   }
@@ -164,18 +211,18 @@ const ProjectDetails: React.FC = () => {
   const images = project.images && Array.isArray(project.images) && project.images.length > 0 ? project.images : [];
 
   return (
-    <div className="bg-white pb-20">
+    <div className="bg-white pb-14">
 
 
       {/* Gallery Section - Specialized layouts for Mobile, Tablet, and Desktop */}
       <div className="w-full">
-        {/* 1. Mobile View: Premium Overlay Card (< 640px / sm:hidden) */}
+        {/* 1. Mobile View: simple photo card + plain title block (< 640px / sm:hidden) */}
         <div className="sm:hidden px-4 pt-3 pb-2">
-          <div className="relative w-full aspect-[4/5] max-h-[560px] bg-gray-900 rounded-[12px] overflow-hidden shadow-xl border border-gray-100">
+          <div className="relative w-full aspect-[4/3] bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
             {images.length > 0 ? (
               <>
                 <div
-                  className="w-full h-full flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden "
+                  className="w-full h-full flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
                   style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                   onScroll={(e) => {
                     const el = e.currentTarget;
@@ -189,14 +236,20 @@ const ProjectDetails: React.FC = () => {
                   }}
                 >
                   {images.map((img, idx) => (
-                    <div key={idx} className="min-w-full h-full snap-center relative">
+                    <div key={idx} className="min-w-full h-full snap-center relative overflow-hidden bg-gray-100">
+                      {!loadedSlides[idx] && (
+                        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+                          <div className="absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+                        </div>
+                      )}
                       <img
                         src={img}
                         alt={`${project.title} - photo ${idx + 1}`}
                         loading={idx === 0 ? 'eager' : 'lazy'}
                         fetchPriority={idx === 0 ? 'high' : 'auto'}
                         decoding="async"
-                        className="w-full h-full object-cover cursor-pointer"
+                        onLoad={() => setLoadedSlides((prev) => (prev[idx] ? prev : { ...prev, [idx]: true }))}
+                        className={`relative w-full h-full object-cover cursor-pointer transition-opacity duration-300 ${loadedSlides[idx] ? 'opacity-100' : 'opacity-0'}`}
                         onClick={() => {
                           setCurrentImageIndex(idx);
                           setIsGalleryModalOpen(true);
@@ -206,95 +259,76 @@ const ProjectDetails: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Top Left Photo Count Badge */}
+                {/* Save */}
                 <button
-                  onClick={() => {
-                    setCurrentImageIndex(activeMobileSlide);
-                    setIsGalleryModalOpen(true);
-                  }}
-                  className="absolute top-4 left-4 z-20 bg-black/50 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/15 shadow-md flex items-center gap-1.5 focus:outline-none"
+                  onClick={(e) => toggleWishlist(e, (project as any)._id || project.id)}
+                  className="absolute top-3 right-3 z-20 w-9 h-9 bg-white rounded-full flex items-center justify-center focus:outline-none"
+                  aria-label="Save to wishlist"
                 >
-                  <svg className="w-3.5 h-3.5 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span>{activeMobileSlide + 1} / {images.length}</span>
+                  <Heart
+                    className={`w-[18px] h-[18px] ${wishlist.includes((project as any)._id || project.id) ? 'fill-red-500 text-red-500' : 'text-gray-900'}`}
+                    strokeWidth={1.5}
+                  />
                 </button>
 
-                {/* Top Right Floating White Heart Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Interactive visual toggle for wishlist
-                  }}
-                  className="absolute top-4 right-4 z-20 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:text-red-500 transition-transform active:scale-90 focus:outline-none"
-                  aria-label="Save project"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                </button>
-
-                {/* Bottom Dark Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-transparent pointer-events-none z-10" />
-
-                {/* Bottom Content Area Inside Photo Card */}
-                <div className="absolute bottom-0 left-0 w-full p-5 z-20 flex flex-col justify-end text-white">
-                  {/* Location Row */}
-                  <div className="flex items-center gap-1.5 text-gray-200 text-xs sm:text-sm font-medium mb-1.5 drop-shadow-xs">
-                    <svg className="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span className="truncate">{project.location || project.emirate || 'Dubai, United Arab Emirates'}</span>
-                  </div>
-
-                  {/* Title & Price/Status Row */}
-                  <div className="flex items-baseline justify-between gap-3 mb-3.5">
-                    <h1 className="text-2xl font-semibold text-white leading-tight drop-shadow-md line-clamp-2 flex-1">
-                      {project.title}
-                    </h1>
-                    {project.status && (
-                      <span className="text-white font-semibold text-lg whitespace-nowrap shrink-0 drop-shadow-md  capitalize">
-                        {project.status}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Specs & Badges Pill Row */}
-                  <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden pb-0.5">
-                    {project.category && (
-                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
-                        <svg className="w-3.5 h-3.5 text-[#E2F736]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        {project.category}
-                      </span>
-                    )}
-                    {project.emirate && (
-                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
-                        📍 {project.emirate}
-                      </span>
-                    )}
-                    {project.duration && (
-                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
-                        ⏱️ {project.duration}
-                      </span>
-                    )}
-                    {project.bestTime && (
-                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
-                        ✨ {project.bestTime}
-                      </span>
-                    )}
-                    {!project.duration && !project.bestTime && (
-                      <span className="bg-black/65 backdrop-blur-md border border-white/20 text-gray-100 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 shadow-sm">
-                        ⭐ 4.9 Rated
-                      </span>
-                    )}
-                  </div>
-                </div>
+                {/* Dot indicators — max 8 visible; with more photos the window slides
+                    with the active photo and edge dots shrink to hint there are more */}
+                {images.length > 1 && (() => {
+                  const MAX_DOTS = 8;
+                  const total = images.length;
+                  const count = Math.min(MAX_DOTS, total);
+                  const start = total > MAX_DOTS
+                    ? Math.min(Math.max(activeMobileSlide - Math.floor(MAX_DOTS / 2), 0), total - MAX_DOTS)
+                    : 0;
+                  return (
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 pointer-events-none" aria-hidden="true">
+                      {Array.from({ length: count }).map((_, i) => {
+                        const idx = start + i;
+                        const isActive = idx === activeMobileSlide;
+                        const isEdge =
+                          (i === 0 && start > 0) || (i === count - 1 && start + count < total);
+                        return (
+                          <span
+                            key={idx}
+                            className={`rounded-full transition-all duration-200 ${isActive ? 'w-2 h-2 bg-white' : isEdge ? 'w-1 h-1 bg-white/60' : 'w-1.5 h-1.5 bg-white/60'
+                              }`}
+                          />
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">No Image Available</div>
+              <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">No image available</div>
+            )}
+          </div>
+
+          {/* Title block */}
+          <div className="pt-4">
+            {(project.location || project.emirate) && (
+              <p className="text-xs text-gray-500 truncate">{project.location || project.emirate}</p>
+            )}
+            <h1 className="mt-1 text-xl font-semibold text-gray-900 leading-snug">{project.title}</h1>
+            {project.subtitle && <p className="mt-1 text-sm text-gray-600">{project.subtitle}</p>}
+            {(project.category || project.emirate || project.duration) && (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                {project.category && (
+                  <span className="px-2.5 py-1 rounded-full bg-gray-900 text-white text-[11px] font-medium">
+                    {project.category}
+                  </span>
+                )}
+                {project.emirate && (
+                  <span className="px-2.5 py-1 rounded-full bg-[#FF1645]/10 text-[#FF1645] text-[11px] font-semibold">
+                    {project.emirate}
+                  </span>
+                )}
+                {project.duration && (
+                  <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 text-[11px] font-medium">
+                    {project.duration}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -382,43 +416,6 @@ const ProjectDetails: React.FC = () => {
         </div>
       </div>
 
-
-      {/* Project Title & Header Info (Only visible on Tablet & Desktop since mobile has overlay in hero card) */}
-      <div className="hidden sm:block max-w-[1200px] mx-auto px-4 sm:px-6 xl:px-0 pt-2 pb-4 sm:pb-6">
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          {project.status && (
-            <span className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-800 px-2.5 py-1 rounded-lg text-xs font-medium capitalize">
-              <span className="relative flex w-2 h-2">
-                {project.status.toLowerCase() === 'active' && (
-                  <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-                )}
-                <span className={`relative inline-flex w-2 h-2 rounded-full ${project.status.toLowerCase() === 'active' ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-              </span>
-              {project.status}
-            </span>
-          )}
-          {project.category && (
-            <span className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-800 px-2.5 py-1 rounded-lg text-xs font-medium">
-              <Compass className="w-3.5 h-3.5 text-gray-900" strokeWidth={1.5} />
-              {project.category}
-            </span>
-          )}
-          {project.emirate && (
-            <span className="inline-flex items-center gap-1.5 bg-[#FF1645]/10 text-[#FF1645] px-2.5 py-1 rounded-lg text-xs font-semibold">
-              <MapPin className="w-3.5 h-3.5" strokeWidth={1.5} />
-              {project.emirate}
-            </span>
-          )}
-        </div>
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-          {project.title}
-        </h1>
-        {project.subtitle && (
-          <p className="text-base sm:text-lg md:text-[18px] mt-0.5 text-gray-600 font-normal">
-            {project.subtitle}
-          </p>
-        )}
-      </div>
 
       {/* Full-Screen Swipe & Gesture Lightbox Modal */}
       {isGalleryModalOpen && images.length > 0 && (
@@ -510,11 +507,48 @@ const ProjectDetails: React.FC = () => {
         </div>
       )}
 
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 xl:px-0 pt-4 sm:pt-2 pb-28 sm:pb-12">
-        <div className="grid grid-cols-1 bg-white lg:grid-cols-[minmax(0,1fr)_301.5px] gap-8 lg:gap-10">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 xl:px-0 pt-4 sm:pt-2 pb-0 sm:pb-0">
+        <div className="grid grid-cols-1 bg-white lg:grid-cols-[minmax(0,1fr)_301.5px] gap-5 sm:gap-8 lg:gap-10">
 
           {/* Main Content */}
           <div className="min-w-0 space-y-8">
+            {/* Project Title & Header Info (tablet/desktop) — inside the left column so the sidebar starts level with it */}
+            <div className="hidden sm:block">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                {project.status && (
+                  <span className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-800 px-2.5 py-1 rounded-lg text-xs font-medium capitalize">
+                    <span className="relative flex w-2 h-2">
+                      {project.status.toLowerCase() === 'active' && (
+                        <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                      )}
+                      <span className={`relative inline-flex w-2 h-2 rounded-full ${project.status.toLowerCase() === 'active' ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                    </span>
+                    {project.status}
+                  </span>
+                )}
+                {project.category && (
+                  <span className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-800 px-2.5 py-1 rounded-lg text-xs font-medium">
+                    <Compass className="w-3.5 h-3.5 text-gray-900" strokeWidth={1.5} />
+                    {project.category}
+                  </span>
+                )}
+                {project.emirate && (
+                  <span className="inline-flex items-center gap-1.5 bg-[#FF1645]/10 text-[#FF1645] px-2.5 py-1 rounded-lg text-xs font-semibold">
+                    <MapPin className="w-3.5 h-3.5" strokeWidth={1.5} />
+                    {project.emirate}
+                  </span>
+                )}
+              </div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                {project.title}
+              </h1>
+              {project.subtitle && (
+                <p className="text-base sm:text-lg md:text-[18px] mt-0.5 text-gray-600 font-normal">
+                  {project.subtitle}
+                </p>
+              )}
+            </div>
+
 
             {/* Description */}
             <section>
@@ -523,6 +557,13 @@ const ProjectDetails: React.FC = () => {
                 <p className="whitespace-pre-wrap text-sm sm:text-base text-gray-600 leading-relaxed">{project.description}</p>
               </div>
             </section>
+
+            {/* Mobile: ad banner sits right after the description (sidebar copy is tablet/desktop only) */}
+            {ads.length > 0 && (
+              <div className="md:hidden -mt-4">
+                <CustomSlider images={ads} />
+              </div>
+            )}
 
             {/* Key Information Grid */}
             {(() => {
@@ -668,27 +709,19 @@ const ProjectDetails: React.FC = () => {
 
               return (
                 <section>
-                  <h2 className="text-xl font-semibold text-gray-900 pb-5">Practical Information</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {groups.filter((g) => g.items.length).map(({ key, label, Icon, items }) => (
-                      <div key={key} className="bg-white rounded-lg border border-gray-200 p-5">
-                        <div className="flex items-center gap-2.5 mb-4">
-                          <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 text-gray-900">
-                            <Icon className="w-[18px] h-[18px]" strokeWidth={1.5} />
-                          </div>
-                          <h3 className="text-base font-semibold text-gray-900">{label}</h3>
+                  <h2 className="text-xl font-semibold text-gray-900 pb-3">Practical Information</h2>
+                  <div className="space-y-6">
+                    {groups.filter((g) => g.items.length).map(({ key, label, items }) => (
+                      <div key={key}>
+                        <div className="pb-2">
+                          <h3 className="text-base font-semibold text-gray-900 leading-tight">{label}</h3>
                         </div>
-                        <ul className="space-y-3.5">
+                        <ul className="list-disc pl-5 space-y-2 marker:text-gray-400">
                           {items.map((item, index) => (
-                            <li key={index} className="flex items-start gap-3">
-                              {item.icon ? (
-                                <img src={item.icon} alt="" loading="lazy" className="w-5 h-5 mt-0.5 shrink-0 object-contain" />
-                              ) : (
-                                <Check className="w-4 h-4 mt-0.5 shrink-0 text-gray-900" strokeWidth={1.5} />
-                              )}
+                            <li key={index} className="pl-1">
                               <div className="min-w-0">
-                                <p className="text-sm font-medium text-gray-900">{item.title}</p>
-                                {item.description && <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{item.description}</p>}
+                                <p className="text-sm sm:text-[15px] text-gray-700 leading-relaxed">{item.title}</p>
+                                {item.description && <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">{item.description}</p>}
                               </div>
                             </li>
                           ))}
@@ -697,53 +730,34 @@ const ProjectDetails: React.FC = () => {
                     ))}
 
                     {hasDressCode && (
-                      <div className="bg-white rounded-lg border border-gray-200 p-5">
-                        <div className="flex items-center gap-2.5 mb-4">
-                          <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 text-gray-900">
-                            <Shirt className="w-[18px] h-[18px]" strokeWidth={1.5} />
-                          </div>
-                          <h3 className="text-base font-semibold text-gray-900">Dress Code</h3>
+                      <div>
+                        <div className="pb-2">
+                          <h3 className="text-base font-semibold text-gray-900 leading-tight">Dress Code</h3>
                         </div>
-                        <div className="space-y-3">
+                        <ul className="list-disc pl-5 space-y-2 marker:text-gray-400">
                           {dressRecommended && (
-                            <div className="flex items-start gap-3">
-                              <div className="w-5 h-5 mt-0.5 shrink-0 flex items-center justify-center rounded-full bg-gray-900 text-white">
-                                <Check className="w-3 h-3" strokeWidth={1.5} />
-                              </div>
-                              <div>
-                                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Recommended</p>
-                                <p className="text-sm text-gray-700 mt-0.5 leading-relaxed">{dressRecommended}</p>
-                              </div>
-                            </div>
+                            <li className="pl-1 text-sm sm:text-[15px] text-gray-700 leading-relaxed">
+                              <span className="font-medium text-gray-900">Recommended:</span> {dressRecommended}
+                            </li>
                           )}
                           {dressAvoid && (
-                            <div className="flex items-start gap-3">
-                              <div className="w-5 h-5 mt-0.5 shrink-0 flex items-center justify-center rounded-full border border-gray-300 text-gray-500">
-                                <X className="w-3 h-3" strokeWidth={1.5} />
-                              </div>
-                              <div>
-                                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Avoid</p>
-                                <p className="text-sm text-gray-700 mt-0.5 leading-relaxed">{dressAvoid}</p>
-                              </div>
-                            </div>
+                            <li className="pl-1 text-sm sm:text-[15px] text-gray-700 leading-relaxed">
+                              <span className="font-medium text-gray-900">Avoid:</span> {dressAvoid}
+                            </li>
                           )}
-                        </div>
+                        </ul>
                       </div>
                     )}
 
                     {landmarks.length > 0 && (
-                      <div className="bg-white rounded-lg border border-gray-200 p-5">
-                        <div className="flex items-center gap-2.5 mb-4">
-                          <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 text-gray-900">
-                            <MapPin className="w-[18px] h-[18px]" strokeWidth={1.5} />
-                          </div>
-                          <h3 className="text-base font-semibold text-gray-900">Nearby Landmarks</h3>
+                      <div>
+                        <div className="pb-2">
+                          <h3 className="text-base font-semibold text-gray-900 leading-tight">Nearby Landmarks</h3>
                         </div>
-                        <ul className="divide-y divide-gray-100">
+                        <ul className="list-disc pl-5 space-y-2 marker:text-gray-400">
                           {landmarks.map((landmark, index) => (
-                            <li key={index} className="flex items-center gap-2.5 py-2.5 first:pt-0 last:pb-0">
-                              <span className="w-1.5 h-1.5 rounded-full bg-gray-900 shrink-0" />
-                              <span className="text-sm text-gray-700">{landmark}</span>
+                            <li key={index} className="pl-1 text-sm sm:text-[15px] text-gray-700 leading-relaxed">
+                              {landmark}
                             </li>
                           ))}
                         </ul>
@@ -780,123 +794,42 @@ const ProjectDetails: React.FC = () => {
 
           {/* Sidebar */}
           <div className="w-full lg:max-w-[301.5px] space-y-6">
-            <div className="sticky top-18 space-y-6">
-              <div id="property-contact-sidebar" className="bg-white rounded-lg border  border-gray-200 p-4 sm:p-4">
+            <div className="sticky top-18 space-y-3">
+              <div id="property-contact-sidebar" className="bg-white !mb-0 rounded-lg border border-gray-200 p-3.5 sm:p-5">
                 <h3 className="text-base font-semibold text-gray-900">Interested in this experience?</h3>
                 <p className="text-xs text-gray-500 mt-0.5 mb-4 leading-relaxed">
-                  Share your details and our team will get back to you.
+                  Chat with us on WhatsApp or give us a call.
                 </p>
-
-                {enquirySuccess ? (
-                  <div className="rounded-lg bg-gray-50 border border-gray-200 p-4 text-center space-y-1.5">
-                    <div className="w-9 h-9 mx-auto rounded-full bg-emerald-500 text-white flex items-center justify-center">
-                      <Check className="w-5 h-5" strokeWidth={1.5} />
-                    </div>
-                    <h4 className="text-sm font-semibold text-gray-900">Enquiry sent</h4>
-                    <p className="text-xs text-gray-500 leading-relaxed">
-                      Thank you! Our tourism specialist will get back to you shortly.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setEnquirySuccess(false)}
-                      className="text-xs font-medium text-gray-900 hover:underline pt-1"
-                    >
-                      Send another enquiry
-                    </button>
-                  </div>
-                ) : (
-                  <form onSubmit={handleEnquirySubmit} className="space-y-3">
-                    <div>
-                      <label htmlFor="enquiry-name" className="block text-xs font-medium text-gray-700 mb-1">
-                        Full name <span className="text-gray-900">*</span>
-                      </label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" strokeWidth={1.5} />
-                        <input
-                          id="enquiry-name"
-                          type="text"
-                          required
-                          autoComplete="name"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          placeholder="Your name"
-                          className="w-full h-10 pl-9 pr-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 transition-colors"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label htmlFor="enquiry-phone" className="block text-xs font-medium text-gray-700 mb-1">
-                        Phone <span className="text-gray-400 font-normal">(WhatsApp / Call)</span> <span className="text-gray-900">*</span>
-                      </label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" strokeWidth={1.5} />
-                        <input
-                          id="enquiry-phone"
-                          type="tel"
-                          required
-                          autoComplete="tel"
-                          inputMode="tel"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          placeholder="+971 50 000 0000"
-                          className="w-full h-10 pl-9 pr-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 transition-colors"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label htmlFor="enquiry-message" className="block text-xs font-medium text-gray-700 mb-1">
-                        Message <span className="text-gray-400 font-normal">(optional)</span>
-                      </label>
-                      <div className="relative">
-                        <MessageSquare className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" strokeWidth={1.5} />
-                        <textarea
-                          id="enquiry-message"
-                          rows={3}
-                          value={message}
-                          onChange={(e) => setMessage(e.target.value)}
-                          placeholder="Dates, group size, questions…"
-                          className="w-full pl-9 pr-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 transition-colors py-2 resize-none"
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isSubmittingEnquiry}
-                      className="w-full h-11 bg-gray-900 hover:bg-gray-800 disabled:opacity-70 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
-                    >
-                      {isSubmittingEnquiry ? (
-                        <>
-                          <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
-                          <span>Sending…</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4" strokeWidth={1.5} />
-                          <span>Send Enquiry</span>
-                        </>
-                      )}
-                    </button>
-
-                    <p className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
-                      <Lock className="w-3 h-3" strokeWidth={1.5} />
-                      We only use your number to reply to this enquiry
-                    </p>
-                  </form>
-                )}
+                <div className="flex items-center gap-2.5">
+                  <ContactButtons />
+                </div>
               </div>
 
               {/* Featured Advertisements Carousel Section */}
-              {ads.length > 0 && <CustomSlider images={ads} imageClassName="lg:object-contain!" />}
+              {ads.length > 0 && (
+                <div className="hidden md:block mt-3">
+                  <CustomSlider images={ads} imageClassName="lg:object-contain!" />
+                </div>
+              )}
             </div>
           </div>
 
         </div>
+
+        {/* You may also like — horizontally scrolling cards, same as the home rows */}
+        {suggestions.length > 0 && (
+          <section className="mt-8 sm:mt-14">
+            <CategoryRow
+              category={project.category || ''}
+              title="You may also like"
+              items={suggestions}
+              // Phone: exactly 2 full cards per view (no peek); tablet/desktop unchanged
+              itemWidthClass="w-[calc((100%-1rem)/2)] sm:w-[calc((100%-1.5rem)/2.2)] lg:w-[calc((100%-3rem)/3)] xl:w-[calc((100%-4.5rem)/4)]"
+              wishlist={wishlist}
+              onToggleWishlist={toggleWishlist}
+            />
+          </section>
+        )}
       </div>
 
       {/* Sticky Bottom Action Bar for Mobile View (< 640px / sm:hidden) */}
@@ -907,17 +840,9 @@ const ProjectDetails: React.FC = () => {
           </span>
           <span className="text-sm font-bold text-gray-900 truncate">{project.title}</span>
         </div>
-        <button
-          onClick={() => {
-            const sidebar = document.getElementById('property-contact-sidebar');
-            if (sidebar) {
-              sidebar.scrollIntoView({ behavior: 'smooth' });
-            }
-          }}
-          className="bg-gray-900 hover:bg-gray-800 text-white font-semibold px-5 py-2.5 rounded-lg text-sm whitespace-nowrap active:scale-95 transition-all shrink-0"
-        >
-          Register Interest
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <ContactButtons size="sm" whatsappOnly />
+        </div>
       </div>
     </div>
   );

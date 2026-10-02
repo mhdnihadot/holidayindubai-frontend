@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSeo } from '@/hooks/useSeo';
 
 const privacyData = {
   lastUpdated: new Date().toLocaleDateString(),
@@ -57,6 +58,7 @@ const privacyData = {
 };
 
 const PrivacyPolicy: React.FC = () => {
+  useSeo({ title: 'Privacy Policy', path: '/privacy' });
   return (
     <div className="bg-white min-h-screen font-poppins">
       <div className="max-w-[1400px] mx-auto  bg-white p-8 md:p-12">

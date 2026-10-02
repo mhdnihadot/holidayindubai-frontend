@@ -8,17 +8,13 @@ const Bar: React.FC<{ className?: string }> = ({ className = '' }) => (
 // so nothing jumps when the real page swaps in.
 export const ProjectDetailsSkeleton: React.FC = () => (
   <div className="animate-pulse" aria-busy="true" aria-label="Loading experience details">
-    {/* Mobile hero card */}
+    {/* Mobile photo + title block */}
     <div className="sm:hidden px-4 pt-3 pb-2">
-      <div className="relative w-full aspect-[4/5] max-h-[560px] bg-gray-200 rounded-[12px] overflow-hidden">
-        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2.5">
-          <Bar className="h-3 w-24 bg-gray-300" />
-          <Bar className="h-6 w-3/4 bg-gray-300" />
-          <div className="flex gap-2 pt-1">
-            <Bar className="h-7 w-20 bg-gray-300 rounded-lg" />
-            <Bar className="h-7 w-24 bg-gray-300 rounded-lg" />
-          </div>
-        </div>
+      <div className="w-full aspect-[4/3] bg-gray-200 rounded-2xl" />
+      <div className="pt-4 space-y-2">
+        <Bar className="h-3 w-28" />
+        <Bar className="h-6 w-3/4" />
+        <Bar className="h-3 w-1/2" />
       </div>
     </div>
 
@@ -89,15 +85,12 @@ export const ProjectDetailsSkeleton: React.FC = () => (
         {/* Sidebar */}
         <div className="w-full lg:max-w-[301.5px]">
           <div className="rounded-lg border border-gray-200 p-5 sm:p-6 space-y-4">
-            <Bar className="h-6 w-4/5" />
-            <Bar className="h-4 w-full" />
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Bar className="h-3 w-24" />
-                <Bar className="h-11 w-full rounded-lg" />
-              </div>
-            ))}
-            <Bar className="h-12 w-full rounded-lg" />
+            <Bar className="h-5 w-4/5" />
+            <Bar className="h-3 w-full" />
+            <div className="flex gap-2.5 pt-1">
+              <Bar className="h-11 flex-1 rounded-lg" />
+              <Bar className="h-11 flex-1 rounded-lg" />
+            </div>
           </div>
         </div>
       </div>

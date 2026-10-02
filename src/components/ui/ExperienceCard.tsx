@@ -39,7 +39,7 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({ project, isSaved
       </button>
     </div>
 
-    <h3 className="text-base sm:text-[17px] font-semibold text-gray-900 mb-0.5 leading-tight truncate" title={project.title}>
+    <h3 className="text-base sm:text-[17px] font-semibold text-gray-900 pb-1 leading-snug truncate" title={project.title}>
       {project.title}
     </h3>
 
@@ -68,7 +68,7 @@ export const ExperienceCardSkeleton: React.FC<{ compact?: boolean }> = ({ compac
     <div className={`relative ${compact ? 'aspect-[16/10] sm:aspect-[4/3]' : 'aspect-[4/3]'} rounded-2xl sm:rounded-3xl mb-2.5 bg-gray-200`}>
       <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100" />
     </div>
-    <div className="h-4 sm:h-[18px] w-3/4 bg-gray-200 rounded mb-1.5" />
+    <div className="h-4 sm:h-[18px] w-3/4 bg-gray-200 rounded mb-2" />
     <div className="flex items-center justify-between gap-2">
       <div className="flex items-center gap-1">
         <div className="w-3.5 h-3.5 rounded-full bg-gray-200" />

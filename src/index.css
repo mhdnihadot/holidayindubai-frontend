@@ -16,6 +16,7 @@
 
   --animate-shine: shine 3s linear infinite;
   --animate-typing: typing 1.2s steps(14, end) forwards;
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
 
   --color-primary: var(--primary-color);
   --color-primary-hover: var(--primary-color-hover);
@@ -42,6 +43,17 @@
 
   to {
     background-position: -200% center;
+  }
+}
+
+/* Image loading placeholder — a light sweep across a gray block */
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
   }
 }
 

@@ -6,10 +6,12 @@ import CategoryFilter from '@/components/ui/CategoryFilter';
 import EmirateFilter from '@/components/ui/EmirateFilter';
 import GroupedExperiences from '@/components/ui/GroupedExperiences';
 import { GroupedExperiencesSkeleton } from '@/components/ui/GroupedExperiencesSkeleton';
+import { useSeo } from '@/hooks/useSeo';
 
 const Landing: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  useSeo({ path: '/' });
 
   useEffect(() => {
     const fetchProjects = async () => {

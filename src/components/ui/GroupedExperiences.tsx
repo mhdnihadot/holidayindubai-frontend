@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { type Project } from '@/services/project.service';
-import apiClient from '@/services/apiClient';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { seedProjects } from '@/services/projectCache';
 import { ExperienceCard } from '@/components/ui/ExperienceCard';
 import { getCategoryIconComponent } from '@/utils/categoryIcons';
+import { useWishlist } from '@/hooks/useWishlist';
 
 interface GroupedExperiencesProps {
   projects: Project[];
@@ -22,12 +22,16 @@ const ROW_LIMIT = 8;
 
 interface CategoryRowProps {
   category: string;
+  /** Heading text — defaults to the category name */
+  title?: string;
+  /** Override card widths per breakpoint */
+  itemWidthClass?: string;
   items: Project[];
   wishlist: string[];
   onToggleWishlist: (e: React.MouseEvent, projectId: string) => void;
 }
 
-const CategoryRow: React.FC<CategoryRowProps> = ({ category, items, wishlist, onToggleWishlist }) => {
+export const CategoryRow: React.FC<CategoryRowProps> = ({ category, title, items, wishlist, onToggleWishlist, itemWidthClass }) => {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
@@ -55,14 +59,14 @@ const CategoryRow: React.FC<CategoryRowProps> = ({ category, items, wishlist, on
   };
 
   // Mobile: 2 cards visible with the next one peeking in. Desktop: exactly 4 per view.
-  const itemWidth = 'w-[calc((100%-1rem)/2.15)] sm:w-[calc((100%-1.5rem)/2.2)] lg:w-[calc((100%-3rem)/3)] xl:w-[calc((100%-4.5rem)/4)]';
+  const itemWidth = itemWidthClass ?? 'w-[calc((100%-1rem)/2.15)] sm:w-[calc((100%-1.5rem)/2.2)] lg:w-[calc((100%-3rem)/3)] xl:w-[calc((100%-4.5rem)/4)]';
 
   return (
     <div>
       {/* Section Header */}
       <div className="flex items-center mb-4 sm:mb-6">
         {getCategoryIcon(category)}
-        <h2 className="text-base sm:text-xl md:text-2xl font-semibold sm:font-bold text-gray-900">{category}</h2>
+        <h2 className="text-base sm:text-xl md:text-2xl font-semibold sm:font-bold text-gray-900">{title ?? category}</h2>
         <Link to={categoryHref} className="ml-2 sm:ml-3 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
           <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5l7 7-7 7" />
@@ -132,70 +136,7 @@ const GroupedExperiences: React.FC<GroupedExperiencesProps> = ({ projects }) => 
     seedProjects(projects);
   }, [projects]);
 
-  const [wishlist, setWishlist] = useState<string[]>([]);
-
-  // Load user's wishlist on mount and listen to storage events
-  useEffect(() => {
-    const loadWishlist = () => {
-      const userStr = localStorage.getItem('userUser');
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          if (user.wishlist) {
-            setWishlist(user.wishlist.map((w: any) => typeof w === 'string' ? w : w._id || w.id));
-          }
-        } catch (e) {
-          console.error('Error parsing user data for wishlist', e);
-        }
-      }
-    };
-
-    loadWishlist();
-    window.addEventListener('storage', loadWishlist);
-
-    return () => {
-      window.removeEventListener('storage', loadWishlist);
-    };
-  }, []);
-
-  const toggleWishlist = async (e: React.MouseEvent, projectId: string) => {
-    e.preventDefault(); // Prevent navigating to project details
-    e.stopPropagation();
-
-    const userToken = localStorage.getItem('userToken');
-    if (!userToken) {
-      alert("Please log in to save properties to your wishlist.");
-      return;
-    }
-
-    try {
-      // Optimistic UI update
-      const isInWishlist = wishlist.includes(projectId);
-      setWishlist(prev =>
-        isInWishlist ? prev.filter(id => id !== projectId) : [...prev, projectId]
-      );
-
-      const res = await apiClient.post(`/user/wishlist/${projectId}`);
-      if (res.data?.status === 'success') {
-        // Update local storage so other components (like header) stay in sync
-        const userStr = localStorage.getItem('userUser');
-        if (userStr) {
-          const user = JSON.parse(userStr);
-          user.wishlist = res.data.data.wishlist;
-          localStorage.setItem('userUser', JSON.stringify(user));
-        }
-      }
-    } catch (error) {
-      console.error('Failed to toggle wishlist:', error);
-      alert('Failed to update wishlist. Please try again.');
-      // Revert optimistic update
-      const userStr = localStorage.getItem('userUser');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        setWishlist(user.wishlist || []);
-      }
-    }
-  };
+  const { wishlist, toggleWishlist } = useWishlist();
 
   // Group projects by category
   const groupedProjects = projects.reduce((acc, project) => {

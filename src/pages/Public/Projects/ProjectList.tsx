@@ -4,6 +4,7 @@ import { projectService, type Project } from '@/services/project.service';
 import { ChevronRight, Compass, X } from 'lucide-react';
 import apiClient from '@/services/apiClient';
 import { seedProjects } from '@/services/projectCache';
+import { useSeo } from '@/hooks/useSeo';
 import { ExperienceCard, ExperienceCardSkeleton } from '@/components/ui/ExperienceCard';
 
 const ProjectList: React.FC = () => {
@@ -117,6 +118,19 @@ const ProjectList: React.FC = () => {
   const formatSlug = (v: string) => v.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   const emirateName = emirateParam ? formatSlug(emirateParam) : null;
   const pageTitle = categoryParam || (emirateName ? `Experiences in ${emirateName}` : 'Explore Activities');
+
+  useSeo({
+    title: categoryParam
+      ? `${categoryParam} in Dubai & UAE`
+      : emirateName
+        ? `Things to Do in ${emirateName}`
+        : 'Explore Dubai Attractions & Experiences',
+    description: categoryParam
+      ? `Browse ${categoryParam} experiences in Dubai and the UAE on HolidayInDubai – locations, timings, highlights and practical tips.`
+      : emirateName
+        ? `Discover the best attractions and things to do in ${emirateName} with HolidayInDubai.`
+        : undefined,
+  });
 
   return (
     <div className="bg-white min-h-screen pt-6 sm:pt-8 pb-16">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSeo } from '@/hooks/useSeo';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
@@ -45,6 +46,7 @@ const termsData = {
 };
 
 const Terms: React.FC = () => {
+  useSeo({ title: 'Terms & Conditions', path: '/terms' });
   return (
     <div className="bg-white min-h-screen font-poppins">
       <div className="max-w-[1400px] mx-auto bg-white p-8 md:p-12">

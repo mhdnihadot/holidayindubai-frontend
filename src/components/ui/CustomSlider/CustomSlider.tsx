@@ -21,33 +21,33 @@ const CustomSliderComponent = (props: CustomSliderProps) => {
   const destination = currentImage?.projectDetails?.slug
     ? `/projects/${currentImage.projectDetails.slug}`
     : currentImage?.project
-    ? typeof currentImage.project === "object"
-      ? `/projects/${currentImage.project.id || currentImage.project._id}`
-      : `/projects/${currentImage.project}`
-    : "#";
+      ? typeof currentImage.project === "object"
+        ? `/projects/${currentImage.project.id || currentImage.project._id}`
+        : `/projects/${currentImage.project}`
+      : "#";
 
   const isExternalUrl = !!currentImage?.url;
   const Wrapper = isExternalUrl ? "a" : Link;
   const wrapperProps: any = isExternalUrl
     ? {
-        href: currentImage.url,
-        target: "_blank",
-        rel: "noopener noreferrer",
-      }
+      href: currentImage.url,
+      target: "_blank",
+      rel: "noopener noreferrer",
+    }
     : {
-        to: destination,
-        onClick: (e: any) => {
-          if (destination === "#") e.preventDefault();
-          handleClick(currentImage._id || currentImage.id);
-        },
-      };
+      to: destination,
+      onClick: (e: any) => {
+        if (destination === "#") e.preventDefault();
+        handleClick(currentImage._id || currentImage.id);
+      },
+    };
 
   return (
     <Wrapper
       {...wrapperProps}
       className={`relative flex w-full overflow-hidden ${containerClassName}`}
     >
-      <div className={`relative w-full ${heightClassName || "h-[120px] sm:h-[550px]"}`}>
+      <div className={`relative w-full ${heightClassName || "h-[120px] sm:h-[500px]"}`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
