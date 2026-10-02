@@ -9,7 +9,7 @@ import {
   Trees, TreePine, Droplet, Fish, Bird, Bug, Flower, Leaf, Shield, 
   Crown, Gem, Gift, Heart, Music, Video, Gamepad, Utensils, Coffee, 
   Wine, Beer, Cake, ShoppingBag, ShoppingCart, Tag, Book, Briefcase, 
-  Building, Castle, Factory, Home, Hotel, Store, Wrench, Zap 
+  Building, Castle, Factory, Home, Hotel, Store, Wrench, Zap
 } from 'lucide-react';
 
 const iconPool = [
@@ -22,14 +22,18 @@ const iconPool = [
   Building, Castle, Factory, Home, Hotel, Store, Wrench, Zap
 ];
 
-const getCategoryIcon = (name: string) => {
+const getCategoryIconComponent = (name: string) => {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
   hash = Math.abs(hash);
-  const IconComponent = iconPool[hash % iconPool.length];
-  return <IconComponent strokeWidth={1} className="w-[30px] h-[30px]" />;
+  return iconPool[hash % iconPool.length];
+};
+
+const getCategoryIcon = (name: string) => {
+  const IconComponent = getCategoryIconComponent(name);
+  return <IconComponent strokeWidth={1.5} className="w-[30px] h-[30px]" />;
 };
 
 const CategoryFilter: React.FC = () => {
@@ -56,7 +60,8 @@ const CategoryFilter: React.FC = () => {
   const displayCategories = dbCategories.map((name, index) => ({
     id: index,
     name,
-    icon: getCategoryIcon(name)
+    icon: getCategoryIcon(name),
+    Icon: getCategoryIconComponent(name)
   }));
   
   const mainCategories = displayCategories.slice(0, 8);
@@ -65,34 +70,30 @@ const CategoryFilter: React.FC = () => {
 
   return (
     <div className="w-full">
-      {/* Mobile View: Horizontal Scrollable Category Strip (< 640px) */}
+      {/* Mobile View: single row that scrolls sideways — ~4 visible, next one peeks (< 640px) */}
       <div className="sm:hidden w-full px-4 mt-2 mb-6">
-        <h2 className="text-base font-semibold text-gray-900 pb-2">Explore by Category</h2>
+        <h2 className="text-base font-semibold text-gray-900 pb-3">Explore by Category</h2>
         <div
-          className="overflow-x-auto -mx-4 px-4 pb-2 [&::-webkit-scrollbar]:hidden"
+          className="overflow-x-auto -mx-4 px-4 snap-x snap-mandatory scroll-px-4 [&::-webkit-scrollbar]:hidden"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          <div className="flex items-stretch gap-2.5 min-w-max">
-            {isLoading && Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex flex-col items-center justify-between p-3 rounded-lg border border-gray-200 w-[140px] h-[94px] flex-shrink-0 animate-pulse">
-                <div className="w-8 h-8 rounded-full bg-gray-200" />
-                <div className="h-2.5 w-20 bg-gray-200 rounded" />
+          <div className="grid grid-flow-col auto-cols-[calc((100vw-3.5rem)/4.3)] gap-x-2 w-max">
+            {isLoading && Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-1.5 animate-pulse">
+                <div className="w-14 h-14 rounded-lg bg-gray-100" />
+                <div className="h-2 w-12 bg-gray-100 rounded" />
               </div>
             ))}
-            {displayCategories.map((category) => (
+            {displayCategories.map(({ id, name, Icon }) => (
               <Link
-                key={category.id}
-                to={`/projects?category=${encodeURIComponent(category.name)}`}
-                className="flex flex-col items-center justify-between p-3 rounded-lg border border-gray-200 bg-white hover:border-black hover:bg-gray-50 text-center w-[140px] h-[94px] transition-all flex-shrink-0 group focus:outline-none"
+                key={id}
+                to={`/projects?category=${encodeURIComponent(name)}`}
+                className="snap-start flex flex-col items-center gap-1.5 text-center focus:outline-none group"
               >
-                <div className="w-8 h-8 flex items-center justify-center text-gray-600 group-hover:text-black group-hover:scale-105 transition-all">
-                  <div className="scale-90 flex items-center justify-center">
-                    {category.icon}
-                  </div>
-                </div>
-                <span className="text-[11px] font-medium text-gray-700 group-hover:text-black leading-tight line-clamp-2 w-full mt-1">
-                  {category.name}
+                <span className="w-14 h-14 flex items-center justify-center rounded-lg bg-gray-50 text-gray-800 group-active:bg-gray-100 transition-colors">
+                  <Icon className="w-6 h-6" strokeWidth={1} />
                 </span>
+                <span className="text-[11px] font-normal text-gray-600 leading-tight line-clamp-2">{name}</span>
               </Link>
             ))}
           </div>
@@ -135,7 +136,7 @@ const CategoryFilter: React.FC = () => {
                 className="flex flex-col items-center justify-start text-center p-2 rounded-lg hover:bg-gray-50 transition-all duration-200 group focus:outline-none"
               >
                 <div className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center text-gray-500 group-hover:text-gray-900 group-hover:scale-110 transition-all duration-200">
-                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.7" strokeLinecap="round" strokeLinejoin="round" className="w-[28px] h-[28px] md:w-[30px] md:h-[30px]">
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-[28px] h-[28px] md:w-[30px] md:h-[30px]">
                     <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
                     <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
                     <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
@@ -176,7 +177,7 @@ const CategoryFilter: React.FC = () => {
                   className="flex flex-col items-center justify-start text-center p-2 rounded-lg hover:bg-gray-50 transition-all duration-200 group focus:outline-none"
                 >
                   <div className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center text-gray-500 group-hover:text-gray-900 group-hover:scale-110 transition-all duration-200">
-                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.7" strokeLinecap="round" strokeLinejoin="round" className="w-[28px] h-[28px] md:w-[30px] md:h-[30px]">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-[28px] h-[28px] md:w-[30px] md:h-[30px]">
                       <path d="M5 12h14" />
                     </svg>
                   </div>

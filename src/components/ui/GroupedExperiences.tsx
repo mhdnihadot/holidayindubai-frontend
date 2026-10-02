@@ -16,28 +16,28 @@ const getCategoryIcon = (category: string) => {
   if (cat.includes('top') || cat.includes('must-do')) {
     return (
       <svg className="w-6 h-6 text-pink-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M16 4h2a2 2 0 012 2v3a4 4 0 01-4 4h-1m-7-9H6a2 2 0 00-2 2v3a4 4 0 004 4h1m4 0v5m0 0h-4m4 0h4m-4-15v4a2 2 0 01-2 2h-4a2 2 0 01-2-2V4h8z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 4h2a2 2 0 012 2v3a4 4 0 01-4 4h-1m-7-9H6a2 2 0 00-2 2v3a4 4 0 004 4h1m4 0v5m0 0h-4m4 0h4m-4-15v4a2 2 0 01-2 2h-4a2 2 0 01-2-2V4h8z" />
       </svg>
     );
   }
   if (cat.includes('landmark') || cat.includes('sightseeing')) {
     return (
       <svg className="w-6 h-6 text-pink-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 2v9m0 0l-3-3m3 3l3-3m-9 9h12a2 2 0 002-2v-4a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 002 2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 2v9m0 0l-3-3m3 3l3-3m-9 9h12a2 2 0 002-2v-4a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 002 2z" />
       </svg>
     );
   }
   if (cat.includes('desert') || cat.includes('nature')) {
     return (
       <svg className="w-6 h-6 text-pink-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M3 21h18M5 21v-4a4 4 0 014-4h6a4 4 0 014 4v4M9 13v-3a3 3 0 013-3v0a3 3 0 013 3v3" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 21h18M5 21v-4a4 4 0 014-4h6a4 4 0 014 4v4M9 13v-3a3 3 0 013-3v0a3 3 0 013 3v3" />
       </svg>
     );
   }
   // Default icon
   return (
     <svg className="w-6 h-6 text-pink-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
     </svg>
   );
 };

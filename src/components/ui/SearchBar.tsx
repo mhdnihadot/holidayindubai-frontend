@@ -68,7 +68,7 @@ const SearchBar: React.FC = () => {
           onClick={handleExpand}
           className={`flex items-center hover:bg-gray-100/50 h-full px-6 py-0 gap-4 cursor-pointer  rounded-full transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${isExpanded ? 'flex-[1_0_0%] min-w-0 bg-white shadow-sm ring-1 ring-gray-200' : 'flex-1 min-w-[150px]'}`}
         >
-          <MapPin className={`w-6 h-6 shrink-0 transition-colors duration-500 ${isExpanded ? 'text-black' : 'text-black'}`} strokeWidth={1} />
+          <MapPin className={`w-6 h-6 shrink-0 transition-colors duration-500 ${isExpanded ? 'text-black' : 'text-black'}`} strokeWidth={1.5} />
 
           <div className="relative flex-1 h-8 flex items-center overflow-hidden">
             {/* Static Text (Collapsed) */}
@@ -102,7 +102,7 @@ const SearchBar: React.FC = () => {
 
         {/* Category Section */}
         <div className={`flex items-center  h-full cursor-pointer hover:bg-gray-100/50 rounded-full transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${isExpanded ? 'px-4 py-2 flex-none' : 'flex-1 px-6 py-0 gap-4'}`}>
-          <LayoutGrid className="w-6 h-6 text-black shrink-0" strokeWidth={1} />
+          <LayoutGrid className="w-6 h-6 text-black shrink-0" strokeWidth={1.5} />
           <div className={`flex flex-col overflow-hidden whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${isExpanded ? 'max-w-0 opacity-0' : 'max-w-[150px] opacity-100'}`}>
             <span className="text-black font-medium text-[15px] ">Category</span>
             <span className="text-gray-500 text-xs">Select Category</span>
@@ -114,7 +114,7 @@ const SearchBar: React.FC = () => {
 
         {/* Vibe Section */}
         <div className={`flex items-center  h-full cursor-pointer hover:bg-gray-100/50 rounded-full transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] overflow-hidden ${isExpanded ? 'max-w-0 opacity-0 px-0' : 'flex-1 px-6 gap-4'}`}>
-          <Sparkles className="w-6 h-6 text-black shrink-0" strokeWidth={1} />
+          <Sparkles className="w-6 h-6 text-black shrink-0" strokeWidth={1.5} />
           <div className="flex flex-col whitespace-nowrap">
             <span className="text-black font-medium text-[15px] ">Vibe</span>
             <span className="text-gray-500 text-xs">Adventure, Family..</span>

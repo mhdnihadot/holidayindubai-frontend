@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, LayoutGrid, Sparkles, X, SlidersHorizontal } from 'lucide-react';
+import { Search, MapPin, LayoutGrid, Sparkles, X } from 'lucide-react';
 
 const MobileSearchBar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -33,28 +33,50 @@ const MobileSearchBar: React.FC = () => {
 
   return (
     <div className="w-full px-4 py-3 bg-white">
-      {/* Collapsed Search Trigger Pill */}
-      <button
+      {/* Collapsed Search Trigger — mirrors the desktop SearchBar pill */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsOpen(true)}
-        className="w-full bg-white border border-gray-200 rounded-full py-1.5 px-2 shadow-xs hover:shadow-md transition-all flex items-center justify-between gap-3 text-left focus:outline-none"
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setIsOpen(true); }}
+        className="w-full bg-white border border-gray-200 rounded-full p-1.5 pl-4 flex items-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/10"
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-full bg-[#FF1645]/10 text-[#FF1645] flex items-center justify-center shrink-0">
-            <Search className="w-5 h-5" strokeWidth={2.2} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">
-              {searchQuery ? searchQuery : 'Where to in Dubai?'}
-            </p>
-            <p className="text-xs text-gray-500 truncate">
-              {selectedCategory || 'Any category'} • {selectedVibe || 'Any vibe'}
-            </p>
+        {/* Location */}
+        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+          <MapPin className="w-5 h-5 text-black shrink-0" strokeWidth={1.5} />
+          <div className="flex flex-col min-w-0">
+            <span className="text-black font-medium text-sm leading-tight truncate">
+              {searchQuery || 'Location'}
+            </span>
+            <span className="text-gray-500 text-[11px] leading-tight truncate">Search city or area</span>
           </div>
         </div>
-        <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-700 shrink-0 hover:bg-gray-50">
-          <SlidersHorizontal className="w-4 h-4" strokeWidth={1.5} />
+
+        <div className="w-px h-8 bg-gray-300 mx-3 shrink-0" />
+
+        {/* Category */}
+        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+          <LayoutGrid className="w-5 h-5 text-black shrink-0" strokeWidth={1.5} />
+          <div className="flex flex-col min-w-0">
+            <span className="text-black font-medium text-sm leading-tight truncate">
+              {selectedCategory || 'Category'}
+            </span>
+            <span className="text-gray-500 text-[11px] leading-tight truncate">
+              {selectedVibe || 'Select Category'}
+            </span>
+          </div>
         </div>
-      </button>
+
+        {/* Search Button */}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}
+          aria-label="Search"
+          className="ms-2 w-11 h-11 shrink-0 bg-[#FF1645] hover:bg-[#f80d3c] text-white rounded-full flex items-center justify-center transition-colors"
+        >
+          <Search className="w-5 h-5" strokeWidth={1.5} />
+        </button>
+      </div>
 
       {/* Expanded Full-Screen Search Modal */}
       {isOpen && (
@@ -83,7 +105,7 @@ const MobileSearchBar: React.FC = () => {
             {/* Location Card */}
             <div className="bg-white rounded-lg p-5 shadow-xs border border-gray-100">
               <div className="flex items-center gap-2 mb-3">
-                <MapPin className="w-5 h-5 text-gray-700" strokeWidth={1} />
+                <MapPin className="w-5 h-5 text-gray-700" strokeWidth={1.5} />
                 <h4 className="font-semibold text-gray-900 text-base">Where do you want to go?</h4>
               </div>
               <div className="relative">
@@ -147,7 +169,7 @@ const MobileSearchBar: React.FC = () => {
             {/* Vibe Card */}
             <div className="bg-white rounded-lg p-5 shadow-xs border border-gray-100">
               <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-gray-700" strokeWidth={1} />
+                <Sparkles className="w-5 h-5 text-gray-700" strokeWidth={1.5} />
                 <h4 className="font-semibold text-gray-900 text-base">Select Vibe</h4>
               </div>
               <div className="grid grid-cols-2 gap-2.5">
@@ -184,7 +206,7 @@ const MobileSearchBar: React.FC = () => {
               onClick={handleSearchSubmit}
               className="flex-1 bg-[#FF1645] hover:bg-[#e00d38] text-white py-3.5 px-6 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 shadow-sm shadow-[#FF1645]/25 transition-all active:scale-[0.98]"
             >
-              <Search className="w-5 h-5" strokeWidth={2} />
+              <Search className="w-5 h-5" strokeWidth={1.5} />
               <span>Search Experiences</span>
             </button>
           </div>

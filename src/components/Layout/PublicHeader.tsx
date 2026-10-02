@@ -247,7 +247,7 @@ const PublicHeader: React.FC = () => {
             Invest in Dubai
           </a>
           <button className="hidden md:flex items-center gap-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-3.5 py-2.5 rounded-full text-xs font-medium transition-colors">
-            <Plus strokeWidth={1.4} className="w-4 h-4" />
+            <Plus strokeWidth={1.5} className="w-4 h-4" />
             For Business
           </button>
 
@@ -264,7 +264,7 @@ const PublicHeader: React.FC = () => {
                 }}
                 className="p-1.5 sm:p-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition-colors"
               >
-                <Heart strokeWidth={1.4} className="w-5 h-5" />
+                <Heart strokeWidth={1.5} className="w-5 h-5" />
               </button>
 
               {isWishlistOpen && isLoggedIn && (
@@ -297,7 +297,7 @@ const PublicHeader: React.FC = () => {
                             title="Remove from wishlist"
                           >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
                         </div>
@@ -314,7 +314,7 @@ const PublicHeader: React.FC = () => {
             </div>
 
             <button className="hidden lg:block p-1.5 sm:p-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition-colors">
-              <Bell strokeWidth={1.4} className="w-5 h-5" />
+              <Bell strokeWidth={1.5} className="w-5 h-5" />
             </button>
 
             {/* Conditional User Icon / Avatar */}
@@ -363,7 +363,7 @@ const PublicHeader: React.FC = () => {
                 onClick={() => setIsAuthOpen(!isAuthOpen)}
                 className={`w-9 h-9 ml-1 rounded-full flex items-center justify-center transition-colors overflow-hidden ${isAuthOpen ? 'bg-gray-200 text-gray-700' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
               >
-                <User className="w-6 h-6" strokeWidth={1} />
+                <User className="w-6 h-6" strokeWidth={1.5} />
               </button>
             )}
 
@@ -390,7 +390,7 @@ const PublicHeader: React.FC = () => {
                     className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
 
@@ -525,7 +525,7 @@ const PublicHeader: React.FC = () => {
               >
                 <span>Explore</span>
                 <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
                 </svg>
               </Link>
               <Link
@@ -535,7 +535,7 @@ const PublicHeader: React.FC = () => {
               >
                 <span>Contact</span>
                 <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
                 </svg>
               </Link>
               <Link
@@ -545,7 +545,7 @@ const PublicHeader: React.FC = () => {
               >
                 <span>Blog</span>
                 <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
                 </svg>
               </Link>
               <Link
@@ -555,7 +555,7 @@ const PublicHeader: React.FC = () => {
               >
                 <span>News</span>
                 <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
                 </svg>
               </Link>
             </nav>
@@ -574,7 +574,7 @@ const PublicHeader: React.FC = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="w-full sm:w-1/2 flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-3.5 px-6 rounded-full text-sm font-medium transition-colors text-center shadow-xs"
               >
-                <Plus strokeWidth={1.4} className="w-4 h-4" />
+                <Plus strokeWidth={1.5} className="w-4 h-4" />
                 For Business
               </button>
             </div>
@@ -596,7 +596,7 @@ const PublicHeader: React.FC = () => {
               className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
 
