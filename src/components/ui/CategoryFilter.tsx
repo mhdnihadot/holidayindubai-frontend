@@ -2,34 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { categoryService } from '../../services/category.service';
 
-import { 
-  Map, Tent, Compass, Anchor, Sailboat, Palmtree, Mountain, Umbrella, 
-  Plane, Car, Bike, Train, Bus, Ship, Ticket, Camera, Binoculars, 
-  MapPin, Navigation, Globe, Sun, Moon, Cloud, Star, Snowflake, Flame, 
-  Trees, TreePine, Droplet, Fish, Bird, Bug, Flower, Leaf, Shield, 
-  Crown, Gem, Gift, Heart, Music, Video, Gamepad, Utensils, Coffee, 
-  Wine, Beer, Cake, ShoppingBag, ShoppingCart, Tag, Book, Briefcase, 
-  Building, Castle, Factory, Home, Hotel, Store, Wrench, Zap
-} from 'lucide-react';
-
-const iconPool = [
-  Map, Tent, Compass, Anchor, Sailboat, Palmtree, Mountain, Umbrella, 
-  Plane, Car, Bike, Train, Bus, Ship, Ticket, Camera, Binoculars, 
-  MapPin, Navigation, Globe, Sun, Moon, Cloud, Star, Snowflake, Flame, 
-  Trees, TreePine, Droplet, Fish, Bird, Bug, Flower, Leaf, Shield, 
-  Crown, Gem, Gift, Heart, Music, Video, Gamepad, Utensils, Coffee, 
-  Wine, Beer, Cake, ShoppingBag, ShoppingCart, Tag, Book, Briefcase, 
-  Building, Castle, Factory, Home, Hotel, Store, Wrench, Zap
-];
-
-const getCategoryIconComponent = (name: string) => {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  hash = Math.abs(hash);
-  return iconPool[hash % iconPool.length];
-};
+import { getCategoryIconComponent } from '@/utils/categoryIcons';
 
 const getCategoryIcon = (name: string) => {
   const IconComponent = getCategoryIconComponent(name);

@@ -169,8 +169,8 @@ const ProjectList: React.FC = () => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-y-5 sm:gap-x-5 sm:gap-y-6">
-            {Array.from({ length: 10 }).map((_, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-y-5 sm:gap-x-5 sm:gap-y-6">
+            {Array.from({ length: 8 }).map((_, i) => (
               <ExperienceCardSkeleton key={i} compact />
             ))}
           </div>
@@ -190,7 +190,7 @@ const ProjectList: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-y-5 sm:gap-x-5 sm:gap-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-y-5 sm:gap-x-5 sm:gap-y-6">
             {projects.map((project) => (
               <ExperienceCard
                 key={project.id}
