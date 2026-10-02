@@ -11,6 +11,12 @@ const PublicHeader: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<'wishlist' | 'notifications' | null>(null);
+
+  // Drawer always reopens with its panels collapsed
+  useEffect(() => {
+    if (!isMobileMenuOpen) setMobilePanel(null);
+  }, [isMobileMenuOpen]);
   const [wishlistItems, setWishlistItems] = useState<any[]>([]);
   const [isLoadingWishlist, setIsLoadingWishlist] = useState(false);
 
@@ -53,7 +59,7 @@ const PublicHeader: React.FC = () => {
 
   // Fetch wishlist when dropdown opens
   useEffect(() => {
-    if (isWishlistOpen && isLoggedIn) {
+    if ((isWishlistOpen || mobilePanel === 'wishlist') && isLoggedIn) {
       const fetchWishlist = async () => {
         setIsLoadingWishlist(true);
         try {
@@ -69,7 +75,7 @@ const PublicHeader: React.FC = () => {
       };
       fetchWishlist();
     }
-  }, [isWishlistOpen, isLoggedIn]);
+  }, [isWishlistOpen, mobilePanel, isLoggedIn]);
 
   const handleRemoveFromWishlist = async (projectId: string) => {
     try {
@@ -236,7 +242,7 @@ const PublicHeader: React.FC = () => {
             href="https://www.propertyseller.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden lg:block bg-gray-900 hover:bg-gray-800 text-white px-5 py-3 rounded-full text-sm font-medium transition-colors"
+            className="block whitespace-nowrap bg-gray-900 hover:bg-gray-800 text-white px-3 py-1.5 text-[11px] sm:px-4 sm:py-2 sm:text-xs lg:px-5 lg:py-3 lg:text-sm rounded-full font-medium transition-colors"
           >
             Invest in Dubai
           </a>
@@ -247,7 +253,7 @@ const PublicHeader: React.FC = () => {
 
           {/* Icons container */}
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3 ml-1 sm:ml-2 relative" ref={dropdownRef}>
-            <div className="relative" ref={wishlistDropdownRef}>
+            <div className="relative hidden lg:block" ref={wishlistDropdownRef}>
               <button
                 onClick={() => {
                   if (!isLoggedIn) {
@@ -307,7 +313,7 @@ const PublicHeader: React.FC = () => {
               )}
             </div>
 
-            <button className="p-1.5 sm:p-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition-colors">
+            <button className="hidden lg:block p-1.5 sm:p-2 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition-colors">
               <Bell strokeWidth={1.4} className="w-5 h-5" />
             </button>
 
@@ -434,6 +440,83 @@ const PublicHeader: React.FC = () => {
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <div className="lg:hidden absolute top-[72px] inset-x-0 bg-white border-b border-gray-200 shadow-2xl px-6 py-6 z-50 animate-in slide-in-from-top-2 duration-300">
+            {/* Wishlist & notifications (moved here from the header on smaller screens) */}
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isLoggedIn) {
+                    setIsMobileMenuOpen(false);
+                    setIsAuthOpen(true);
+                    return;
+                  }
+                  setMobilePanel(mobilePanel === 'wishlist' ? null : 'wishlist');
+                }}
+                className={`flex items-center gap-2.5 px-3.5 py-3 rounded-lg border text-sm font-medium transition-colors ${
+                  mobilePanel === 'wishlist' ? 'border-gray-900 bg-gray-50 text-gray-900' : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Heart strokeWidth={1.5} className="w-5 h-5" />
+                Wishlist
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobilePanel(mobilePanel === 'notifications' ? null : 'notifications')}
+                className={`flex items-center gap-2.5 px-3.5 py-3 rounded-lg border text-sm font-medium transition-colors ${
+                  mobilePanel === 'notifications' ? 'border-gray-900 bg-gray-50 text-gray-900' : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Bell strokeWidth={1.5} className="w-5 h-5" />
+                Notifications
+              </button>
+            </div>
+
+            {mobilePanel === 'wishlist' && isLoggedIn && (
+              <div className="mb-3 rounded-lg border border-gray-200 p-3">
+                {isLoadingWishlist ? (
+                  <div className="flex justify-center py-4"><div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-200 border-t-gray-900"></div></div>
+                ) : wishlistItems.length > 0 ? (
+                  <div className="flex flex-col gap-2.5 max-h-60 overflow-y-auto">
+                    {wishlistItems.map(item => (
+                      <div key={item._id || item.id} className="flex gap-3 items-center">
+                        <Link
+                          to={`/projects/${item._id || item.id}`}
+                          onClick={() => { setIsMobileMenuOpen(false); setMobilePanel(null); }}
+                          className="flex flex-1 min-w-0 gap-3 items-center"
+                        >
+                          <div className="w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                            {item.images && item.images.length > 0 && (
+                              <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-gray-900">{item.title}</p>
+                            <p className="truncate text-xs text-gray-500">{item.location}</p>
+                          </div>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFromWishlist(item._id || item.id)}
+                          className="p-2 text-gray-400 hover:text-gray-900 rounded-full"
+                          aria-label="Remove from wishlist"
+                        >
+                          <X strokeWidth={1.5} className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center py-4 text-sm text-gray-500">Your wishlist is empty</p>
+                )}
+              </div>
+            )}
+
+            {mobilePanel === 'notifications' && (
+              <div className="mb-3 rounded-lg border border-gray-200 p-4 text-center text-sm text-gray-500">
+                No notifications yet
+              </div>
+            )}
+
             <nav className="flex flex-col gap-2">
               <Link
                 to="/projects"

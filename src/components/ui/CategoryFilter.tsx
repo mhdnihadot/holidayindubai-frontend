@@ -35,6 +35,7 @@ const getCategoryIcon = (name: string) => {
 const CategoryFilter: React.FC = () => {
   const [showAll, setShowAll] = useState(false);
   const [dbCategories, setDbCategories] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -45,6 +46,8 @@ const CategoryFilter: React.FC = () => {
         }
       } catch (error) {
         console.error('Failed to fetch categories:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchCategories();
@@ -70,6 +73,12 @@ const CategoryFilter: React.FC = () => {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           <div className="flex items-stretch gap-2.5 min-w-max">
+            {isLoading && Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex flex-col items-center justify-between p-3 rounded-lg border border-gray-200 w-[140px] h-[94px] flex-shrink-0 animate-pulse">
+                <div className="w-8 h-8 rounded-full bg-gray-200" />
+                <div className="h-2.5 w-20 bg-gray-200 rounded" />
+              </div>
+            ))}
             {displayCategories.map((category) => (
               <Link
                 key={category.id}
@@ -96,6 +105,15 @@ const CategoryFilter: React.FC = () => {
           <h2 className="text-lg md:text-xl font-semibold text-gray-900 px-2 pb-2">Explore by Category</h2>
 
           <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-9 gap-2 md:gap-3 lg:gap-1">
+            {isLoading && Array.from({ length: 9 }).map((_, i) => (
+              <div key={i} className="flex flex-col items-center p-2 animate-pulse">
+                <div className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center">
+                  <div className="w-[30px] h-[30px] rounded-md bg-gray-200" />
+                </div>
+                <div className="h-2.5 w-16 bg-gray-200 rounded mt-2" />
+                <div className="h-2.5 w-10 bg-gray-200 rounded mt-1.5" />
+              </div>
+            ))}
             {mainCategories.map((category) => (
               <Link
                 key={category.id}
@@ -111,7 +129,7 @@ const CategoryFilter: React.FC = () => {
               </Link>
             ))}
 
-            {!showAll && (
+            {!showAll && !isLoading && (
               <button
                 onClick={() => setShowAll(true)}
                 className="flex flex-col items-center justify-start text-center p-2 rounded-lg hover:bg-gray-50 transition-all duration-200 group focus:outline-none"

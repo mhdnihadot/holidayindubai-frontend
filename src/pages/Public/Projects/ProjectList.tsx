@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { projectService, type Project } from '@/services/project.service';
-import { ArrowRight, ChevronRight, Clock, Compass, Heart, ImageOff, MapPin, X } from 'lucide-react';
+import { ChevronRight, Compass, X } from 'lucide-react';
 import apiClient from '@/services/apiClient';
-import { prefetchProject, seedProjects } from '@/services/projectCache';
+import { seedProjects } from '@/services/projectCache';
+import { ExperienceCard, ExperienceCardSkeleton } from '@/components/ui/ExperienceCard';
 
 const ProjectList: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -103,7 +104,7 @@ const ProjectList: React.FC = () => {
 
   const activeFilters = [
     categoryParam && { key: 'category', label: categoryParam },
-    emirateParam && { key: 'emirate', label: emirateParam },
+    emirateParam && { key: 'emirate', label: emirateParam.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) },
   ].filter(Boolean) as { key: string; label: string }[];
 
   const removeFilterHref = (key: string) => {
@@ -113,7 +114,9 @@ const ProjectList: React.FC = () => {
     return qs ? `/projects?${qs}` : '/projects';
   };
 
-  const pageTitle = categoryParam || (emirateParam ? `Experiences in ${emirateParam}` : 'Explore Activities');
+  const formatSlug = (v: string) => v.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const emirateName = emirateParam ? formatSlug(emirateParam) : null;
+  const pageTitle = categoryParam || (emirateName ? `Experiences in ${emirateName}` : 'Explore Activities');
 
   return (
     <div className="bg-white min-h-screen pt-6 sm:pt-8 pb-16">
@@ -166,21 +169,9 @@ const ProjectList: React.FC = () => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-lg border border-gray-200 overflow-hidden animate-pulse">
-                <div className="aspect-[4/3] bg-gray-200" />
-                <div className="p-4 space-y-2.5">
-                  <div className="h-3 w-1/3 bg-gray-200 rounded" />
-                  <div className="h-5 w-3/4 bg-gray-200 rounded" />
-                  <div className="h-4 w-full bg-gray-200 rounded" />
-                  <div className="h-4 w-2/3 bg-gray-200 rounded" />
-                  <div className="pt-3 mt-1 border-t border-gray-100 flex justify-between">
-                    <div className="h-4 w-20 bg-gray-200 rounded" />
-                    <div className="h-4 w-24 bg-gray-200 rounded" />
-                  </div>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-y-5 sm:gap-x-5 sm:gap-y-6">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <ExperienceCardSkeleton key={i} compact />
             ))}
           </div>
         ) : projects.length === 0 ? (
@@ -199,86 +190,16 @@ const ProjectList: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-            {projects.map((project) => {
-              const saved = wishlist.includes(project.id!);
-              return (
-                <Link
-                  to={`/projects/${project.id}`}
-                  key={project.id}
-                  onMouseEnter={() => prefetchProject(project.id)}
-                  onTouchStart={() => prefetchProject(project.id)}
-                  className="group flex flex-col h-full bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900"
-                >
-                  <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
-                    {project.images && project.images.length > 0 ? (
-                      <img
-                        src={project.images[0]}
-                        alt={project.title}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <ImageOff className="w-8 h-8" strokeWidth={1.5} />
-                      </div>
-                    )}
-
-                    {project.category && (
-                      <span className="absolute top-3 left-3 max-w-[70%] truncate bg-white text-gray-900 px-2.5 py-1 rounded-lg text-xs font-medium">
-                        {project.category}
-                      </span>
-                    )}
-
-                    <button
-                      onClick={(e) => toggleWishlist(e, project.id!)}
-                      aria-label={saved ? 'Remove from wishlist' : 'Save to wishlist'}
-                      className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 transition-colors z-10"
-                    >
-                      <Heart
-                        className={`w-4 h-4 transition-colors ${saved ? 'fill-red-500 text-red-500' : 'text-gray-900'}`}
-                        strokeWidth={1.5}
-                      />
-                    </button>
-                  </div>
-
-                  <div className="flex-1 flex flex-col p-4">
-                    {(project.location || project.emirate) && (
-                      <p className="flex items-center gap-1 text-xs text-gray-500 mb-1.5 min-w-0">
-                        <MapPin className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
-                        <span className="truncate">
-                          {[project.location, project.emirate].filter(Boolean).join(', ')}
-                        </span>
-                      </p>
-                    )}
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 leading-snug line-clamp-1">
-                      {project.title}
-                    </h3>
-                    {project.description && (
-                      <p className="text-sm text-gray-500 mt-1 line-clamp-2 leading-relaxed">{project.description}</p>
-                    )}
-
-                    <div className="mt-auto pt-4">
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                        {project.duration ? (
-                          <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
-                            <Clock className="w-3.5 h-3.5" strokeWidth={1.5} />
-                            {project.duration}
-                          </span>
-                        ) : (
-                          <span />
-                        )}
-                        <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-900">
-                          View details
-                          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.5} />
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-y-5 sm:gap-x-5 sm:gap-y-6">
+            {projects.map((project) => (
+              <ExperienceCard
+                key={project.id}
+                project={project}
+                isSaved={wishlist.includes(project.id!)}
+                onToggleWishlist={toggleWishlist}
+                compact
+              />
+            ))}
           </div>
         )}
       </div>

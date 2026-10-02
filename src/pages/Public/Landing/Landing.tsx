@@ -5,7 +5,7 @@ import MobileSearchBar from '@/components/ui/MobileSearchBar';
 import CategoryFilter from '@/components/ui/CategoryFilter';
 import EmirateFilter from '@/components/ui/EmirateFilter';
 import GroupedExperiences from '@/components/ui/GroupedExperiences';
-import { ProjectCardSkeleton } from '@/components/ui/ProjectCardSkeleton';
+import { GroupedExperiencesSkeleton } from '@/components/ui/GroupedExperiencesSkeleton';
 
 const Landing: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -40,13 +40,7 @@ const Landing: React.FC = () => {
 
 
       {isLoading ? (
-        <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 xl:px-0 pb-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-6 gap-x-5 sm:gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <ProjectCardSkeleton key={i} />
-            ))}
-          </div>
-        </div>
+        <GroupedExperiencesSkeleton />
       ) : (
         <GroupedExperiences projects={projects} />
       )}
