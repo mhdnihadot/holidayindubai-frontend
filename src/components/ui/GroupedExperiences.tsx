@@ -4,6 +4,7 @@ import { type Project } from '@/services/project.service';
 import { Heart } from 'lucide-react';
 import apiClient from '@/services/apiClient';
 import { useState, useEffect } from 'react';
+import { prefetchProject, seedProjects } from '@/services/projectCache';
 
 interface GroupedExperiencesProps {
   projects: Project[];
@@ -41,6 +42,10 @@ const getCategoryIcon = (category: string) => {
 };
 
 const GroupedExperiences: React.FC<GroupedExperiencesProps> = ({ projects }) => {
+  useEffect(() => {
+    seedProjects(projects);
+  }, [projects]);
+
   const [wishlist, setWishlist] = useState<string[]>([]);
 
   // Load user's wishlist on mount and listen to storage events
@@ -142,7 +147,7 @@ const GroupedExperiences: React.FC<GroupedExperiencesProps> = ({ projects }) => 
           {/* Grid of items */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-6 gap-x-5 sm:gap-6">
             {items.map((project) => (
-              <Link to={`/projects/${project.id}`} key={project.id} className="group flex flex-col focus:outline-none">
+              <Link to={`/projects/${project.id}`} key={project.id} onMouseEnter={() => prefetchProject(project.id)} onTouchStart={() => prefetchProject(project.id)} className="group flex flex-col focus:outline-none">
                 <div className="relative aspect-[4/3] rounded-2xl sm:rounded-3xl overflow-hidden mb-2.5 bg-gray-100 shadow-xs group-hover:shadow-md transition-all">
                   {project.images && project.images.length > 0 ? (
                     <img

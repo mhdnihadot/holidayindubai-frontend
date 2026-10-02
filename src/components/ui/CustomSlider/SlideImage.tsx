@@ -11,6 +11,8 @@ const SlideImage = memo(({ image, imageClassName = "" }: SlideImageProps) => (
     <div className="relative h-full w-full p-0 md:hidden">
       <div className="relative h-full w-full">
         <img
+      loading="lazy"
+      decoding="async"
           alt={image.name || image.title || "ads image"}
           src={
             typeof image?.mobileImage === "object"
@@ -24,6 +26,8 @@ const SlideImage = memo(({ image, imageClassName = "" }: SlideImageProps) => (
 
     {/* Desktop Image */}
     <img
+      loading="lazy"
+      decoding="async"
       alt={image.name || image.title || "ads image"}
       src={
         typeof image?.desktopImage === "object"

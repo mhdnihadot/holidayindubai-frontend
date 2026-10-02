@@ -1,6 +1,11 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
+const CONFIGURED_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
+// Dev only: when opened through an ngrok tunnel, go via the Vite proxy (see vite.config.ts)
+// because the API's CORS list doesn't allow ngrok origins.
+const isNgrokTunnel =
+  import.meta.env.DEV && typeof window !== 'undefined' && /\.ngrok(-free)?\.(app|dev)$/.test(window.location.hostname);
+const API_URL = isNgrokTunnel ? `/__api${new URL(CONFIGURED_API_URL).pathname}` : CONFIGURED_API_URL;
 
 const apiClient = axios.create({
   baseURL: API_URL,

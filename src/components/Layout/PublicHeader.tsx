@@ -232,9 +232,14 @@ const PublicHeader: React.FC = () => {
 
         {/* Right Section: Actions */}
         <div className="flex items-center gap-2 md:gap-3 lg:gap-4">
-          <button className="hidden lg:block bg-black hover:bg-gray-800 text-white px-5 py-3 rounded-full text-sm font-medium transition-colors">
-            Top picks
-          </button>
+          <a
+            href="https://www.propertyseller.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden lg:block bg-gray-900 hover:bg-gray-800 text-white px-5 py-3 rounded-full text-sm font-medium transition-colors"
+          >
+            Invest in Dubai
+          </a>
           <button className="hidden md:flex items-center gap-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-3.5 py-2.5 rounded-full text-xs font-medium transition-colors">
             <Plus strokeWidth={1.4} className="w-4 h-4" />
             For Business
@@ -473,12 +478,15 @@ const PublicHeader: React.FC = () => {
             </nav>
 
             <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-2">
-              <button
+              <a
+                href="https://www.propertyseller.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full sm:w-1/2 bg-black hover:bg-gray-800 text-white py-3.5 px-6 rounded-full text-sm font-medium transition-colors text-center shadow-xs"
+                className="w-full sm:w-1/2 bg-gray-900 hover:bg-gray-800 text-white py-3.5 px-6 rounded-full text-sm font-medium transition-colors text-center"
               >
-                Top picks
-              </button>
+                Invest in Dubai
+              </a>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="w-full sm:w-1/2 flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-3.5 px-6 rounded-full text-sm font-medium transition-colors text-center shadow-xs"

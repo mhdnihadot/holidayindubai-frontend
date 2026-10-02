@@ -1,26 +1,36 @@
+import { lazy, Suspense, type ReactNode } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
-import DashboardLayout from '@/components/Layout/DashboardLayout';
 import PublicLayout from '@/components/Layout/PublicLayout';
-import AdminLogin from '@/pages/Login/Login';
-import UserLogin from '@/pages/Public/Login/UserLogin';
 
-import DashboardOverview from '@/pages/Dashboard/DashboardOverview';
-import Projects from '@/pages/Projects/Projects';
-import Ads from '@/pages/Ads/Ads';
-import CategoryList from '@/pages/Categories/CategoryList';
-import AddCategory from '@/pages/Categories/AddCategory';
-import Users from '@/pages/Users/Users';
-import Enquiries from '@/pages/Enquiries/Enquiries';
-import Profile from '@/pages/Profile/Profile';
-
-// Public Pages
+// Core public journey stays in the main bundle so it renders immediately
 import Landing from '@/pages/Public/Landing/Landing';
 import ProjectList from '@/pages/Public/Projects/ProjectList';
 import ProjectDetails from '@/pages/Public/Projects/ProjectDetails';
-import About from '@/pages/Public/Static/About';
-import PrivacyPolicy from '@/pages/Public/Static/PrivacyPolicy';
-import Terms from '@/pages/Public/Static/Terms';
+
+// Everything else is code-split and only downloaded when visited
+const DashboardLayout = lazy(() => import('@/components/Layout/DashboardLayout'));
+const AdminLogin = lazy(() => import('@/pages/Login/Login'));
+const UserLogin = lazy(() => import('@/pages/Public/Login/UserLogin'));
+const DashboardOverview = lazy(() => import('@/pages/Dashboard/DashboardOverview'));
+const Projects = lazy(() => import('@/pages/Projects/Projects'));
+const Ads = lazy(() => import('@/pages/Ads/Ads'));
+const CategoryList = lazy(() => import('@/pages/Categories/CategoryList'));
+const AddCategory = lazy(() => import('@/pages/Categories/AddCategory'));
+const Users = lazy(() => import('@/pages/Users/Users'));
+const Enquiries = lazy(() => import('@/pages/Enquiries/Enquiries'));
+const Profile = lazy(() => import('@/pages/Profile/Profile'));
+const About = lazy(() => import('@/pages/Public/Static/About'));
+const PrivacyPolicy = lazy(() => import('@/pages/Public/Static/PrivacyPolicy'));
+const Terms = lazy(() => import('@/pages/Public/Static/Terms'));
+
+const PageFallback = () => (
+  <div className="flex justify-center items-center min-h-[60vh]">
+    <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-gray-900" />
+  </div>
+);
+
+const withSuspense = (node: ReactNode) => <Suspense fallback={<PageFallback />}>{node}</Suspense>;
 
 export const router = createBrowserRouter([
   // Public Routes (User Facing)
@@ -31,17 +41,17 @@ export const router = createBrowserRouter([
       { index: true, element: <Landing /> },
       { path: 'projects', element: <ProjectList /> },
       { path: 'projects/:id', element: <ProjectDetails /> },
-      { path: 'about', element: <About /> },
-      { path: 'privacy', element: <PrivacyPolicy /> },
-      { path: 'terms', element: <Terms /> },
-      { path: 'login', element: <UserLogin /> },
+      { path: 'about', element: withSuspense(<About />) },
+      { path: 'privacy', element: withSuspense(<PrivacyPolicy />) },
+      { path: 'terms', element: withSuspense(<Terms />) },
+      { path: 'login', element: withSuspense(<UserLogin />) },
     ],
   },
   
   // Admin Authentication
   {
     path: '/admin/login',
-    element: <AdminLogin />,
+    element: withSuspense(<AdminLogin />),
   },
   
   // Admin Dashboard
@@ -51,16 +61,16 @@ export const router = createBrowserRouter([
     children: [
       {
         path: '',
-        element: <DashboardLayout />,
+        element: withSuspense(<DashboardLayout />),
         children: [
-          { index: true, element: <DashboardOverview /> },
-          { path: 'projects/*', element: <Projects /> },
-          { path: 'ads/*', element: <Ads /> },
-          { path: 'categories', element: <CategoryList /> },
-          { path: 'categories/new', element: <AddCategory /> },
-          { path: 'users', element: <Users /> },
-          { path: 'enquiries', element: <Enquiries /> },
-          { path: 'profile', element: <Profile /> },
+          { index: true, element: withSuspense(<DashboardOverview />) },
+          { path: 'projects/*', element: withSuspense(<Projects />) },
+          { path: 'ads/*', element: withSuspense(<Ads />) },
+          { path: 'categories', element: withSuspense(<CategoryList />) },
+          { path: 'categories/new', element: withSuspense(<AddCategory />) },
+          { path: 'users', element: withSuspense(<Users />) },
+          { path: 'enquiries', element: withSuspense(<Enquiries />) },
+          { path: 'profile', element: withSuspense(<Profile />) },
         ],
       },
     ],

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { projectService, type Project } from '@/services/project.service';
-import { Heart } from 'lucide-react';
+import { ArrowRight, ChevronRight, Clock, Compass, Heart, ImageOff, MapPin, X } from 'lucide-react';
 import apiClient from '@/services/apiClient';
-import { ProjectCardSkeleton } from '@/components/ui/ProjectCardSkeleton';
+import { prefetchProject, seedProjects } from '@/services/projectCache';
 
 const ProjectList: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -90,6 +90,7 @@ const ProjectList: React.FC = () => {
         
         const response = await projectService.getAll(params);
         const data = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
+        if (Array.isArray(data)) seedProjects(data);
         setProjects(data);
       } catch (error) {
         console.error('Failed to fetch projects', error);
@@ -100,92 +101,184 @@ const ProjectList: React.FC = () => {
     fetchProjects();
   }, [emirateParam, categoryParam]);
 
+  const activeFilters = [
+    categoryParam && { key: 'category', label: categoryParam },
+    emirateParam && { key: 'emirate', label: emirateParam },
+  ].filter(Boolean) as { key: string; label: string }[];
+
+  const removeFilterHref = (key: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.delete(key);
+    const qs = next.toString();
+    return qs ? `/projects?${qs}` : '/projects';
+  };
+
+  const pageTitle = categoryParam || (emirateParam ? `Experiences in ${emirateParam}` : 'Explore Activities');
+
   return (
-    <div className="bg-white min-h-screen py-12 px-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-10 text-center">
-          <h1 className="text-4xl font-semibold text-gray-900 pb-3">Explore Activities</h1>
-          <p className="text-gray-500 max-w-2xl mx-auto text-lg">
-            Immerse yourself in unforgettable experiences and discover the best tourism activities Dubai has to offer.
-          </p>
+    <div className="bg-white min-h-screen pt-6 sm:pt-8 pb-16">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 xl:px-0">
+        {/* Header */}
+        <div className="mb-6 sm:mb-8">
+          <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
+            <Link to="/" className="hover:text-gray-900 transition-colors">Home</Link>
+            <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+            <Link to="/projects" className="hover:text-gray-900 transition-colors">Experiences</Link>
+            {categoryParam && (
+              <>
+                <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+                <span className="text-gray-900 font-medium truncate">{categoryParam}</span>
+              </>
+            )}
+          </nav>
+
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">{pageTitle}</h1>
+              <p className="text-sm sm:text-base text-gray-500 mt-1">
+                {isLoading
+                  ? 'Finding experiences…'
+                  : `${projects.length} ${projects.length === 1 ? 'experience' : 'experiences'} to explore`}
+              </p>
+            </div>
+
+            {activeFilters.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                {activeFilters.map((f) => (
+                  <Link
+                    key={f.key}
+                    to={removeFilterHref(f.key)}
+                    className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-800 transition-colors"
+                    aria-label={`Remove ${f.label} filter`}
+                  >
+                    {f.label}
+                    <X className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  </Link>
+                ))}
+                {activeFilters.length > 1 && (
+                  <Link to="/projects" className="text-xs font-medium text-gray-500 hover:text-gray-900 underline-offset-2 hover:underline">
+                    Clear all
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <ProjectCardSkeleton key={i} />
+              <div key={i} className="rounded-lg border border-gray-200 overflow-hidden animate-pulse">
+                <div className="aspect-[4/3] bg-gray-200" />
+                <div className="p-4 space-y-2.5">
+                  <div className="h-3 w-1/3 bg-gray-200 rounded" />
+                  <div className="h-5 w-3/4 bg-gray-200 rounded" />
+                  <div className="h-4 w-full bg-gray-200 rounded" />
+                  <div className="h-4 w-2/3 bg-gray-200 rounded" />
+                  <div className="pt-3 mt-1 border-t border-gray-100 flex justify-between">
+                    <div className="h-4 w-20 bg-gray-200 rounded" />
+                    <div className="h-4 w-24 bg-gray-200 rounded" />
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
+        ) : projects.length === 0 ? (
+          <div className="text-center py-16 px-4 rounded-lg border border-gray-200">
+            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center text-gray-900">
+              <Compass className="w-6 h-6" strokeWidth={1.5} />
+            </div>
+            <h3 className="text-base font-semibold text-gray-900">No experiences found</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              {activeFilters.length ? 'Nothing matches this filter yet — try exploring everything instead.' : 'There are currently no experiences to display.'}
+            </p>
+            {activeFilters.length > 0 && (
+              <Link to="/projects" className="inline-flex items-center gap-1.5 mt-5 px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors">
+                View all experiences
+              </Link>
+            )}
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {projects.map((project) => (
-              <Link to={`/projects/${project.id}`} key={project.id} className="group bg-white rounded-lg overflow-hidden shadow-xs hover:shadow-xl transition-all border border-gray-100 flex flex-col h-full">
-                <div className="relative h-64 overflow-hidden bg-gray-200">
-                  {project.images && project.images.length > 0 ? (
-                    <img
-                      src={project.images[0]}
-                      alt={project.title}
-                      className="w-full h-full object-cover transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      No Image
-                    </div>
-                  )}
-                  <div className="absolute top-4 left-4 flex gap-2">
-                    <span className="bg-white/90 backdrop-blur-sm text-black px-3 py-1 rounded text-xs font-semibold uppercase tracking-wider shadow-xs">
-                      {project.status}
-                    </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {projects.map((project) => {
+              const saved = wishlist.includes(project.id!);
+              return (
+                <Link
+                  to={`/projects/${project.id}`}
+                  key={project.id}
+                  onMouseEnter={() => prefetchProject(project.id)}
+                  onTouchStart={() => prefetchProject(project.id)}
+                  className="group flex flex-col h-full bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-gray-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900"
+                >
+                  <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+                    {project.images && project.images.length > 0 ? (
+                      <img
+                        src={project.images[0]}
+                        alt={project.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <ImageOff className="w-8 h-8" strokeWidth={1.5} />
+                      </div>
+                    )}
+
                     {project.category && (
-                      <span className="bg-blue-600/90 backdrop-blur-sm text-white px-3 py-1 rounded text-xs font-semibold uppercase tracking-wider shadow-xs">
+                      <span className="absolute top-3 left-3 max-w-[70%] truncate bg-white text-gray-900 px-2.5 py-1 rounded-lg text-xs font-medium">
                         {project.category}
                       </span>
                     )}
-                  </div>
-                  <button
-                    onClick={(e) => toggleWishlist(e, project.id!)}
-                    className="absolute top-4 right-4 p-[7px] rounded-full bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white hover:scale-110 transition-all duration-200 z-10"
-                  >
-                    <Heart
-                      className={`w-4 h-4 transition-colors ${wishlist.includes(project.id!) ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
-                    />
-                  </button>
-                </div>
-                <div className="p-6 flex-1 flex flex-col">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{project.title}</h3>
-                  <p className="text-gray-500 text-sm mb-4 line-clamp-3">{project.description}</p>
 
-                  <div className="mt-auto pt-4 border-t border-gray-100 grid grid-cols-2 gap-4 text-sm mb-4">
-                    {project.location && (
-                      <div className="flex flex-col">
-                        <span className="text-gray-400 text-xs">Location</span>
-                        <span className="font-semibold text-gray-900 truncate">{project.location}</span>
-                      </div>
+                    <button
+                      onClick={(e) => toggleWishlist(e, project.id!)}
+                      aria-label={saved ? 'Remove from wishlist' : 'Save to wishlist'}
+                      className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-gray-100 transition-colors z-10"
+                    >
+                      <Heart
+                        className={`w-4 h-4 transition-colors ${saved ? 'fill-red-500 text-red-500' : 'text-gray-900'}`}
+                        strokeWidth={1.5}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="flex-1 flex flex-col p-4">
+                    {(project.location || project.emirate) && (
+                      <p className="flex items-center gap-1 text-xs text-gray-500 mb-1.5 min-w-0">
+                        <MapPin className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
+                        <span className="truncate">
+                          {[project.location, project.emirate].filter(Boolean).join(', ')}
+                        </span>
+                      </p>
                     )}
-                    {project.emirate && (
-                      <div className="flex flex-col">
-                        <span className="text-gray-400 text-xs">Emirate</span>
-                        <span className="font-semibold text-gray-900 truncate">{project.emirate}</span>
-                      </div>
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 leading-snug line-clamp-1">
+                      {project.title}
+                    </h3>
+                    {project.description && (
+                      <p className="text-sm text-gray-500 mt-1 line-clamp-2 leading-relaxed">{project.description}</p>
                     )}
-                  </div>
 
-                  <div className="flex items-center justify-between text-sm mt-2">
-                    <span className="text-blue-600 font-medium group-hover:translate-x-1 transition-transform">View Details &rarr;</span>
+                    <div className="mt-auto pt-4">
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                        {project.duration ? (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
+                            <Clock className="w-3.5 h-3.5" strokeWidth={1.5} />
+                            {project.duration}
+                          </span>
+                        ) : (
+                          <span />
+                        )}
+                        <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-900">
+                          View details
+                          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.5} />
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
-
-            {projects.length === 0 && (
-              <div className="col-span-full text-center py-20 bg-white rounded-2xl border border-gray-100">
-                <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                <h3 className="text-lg font-medium text-gray-900 mb-1">No Projects Found</h3>
-                <p className="text-gray-500">There are currently no projects available to display.</p>
-              </div>
-            )}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

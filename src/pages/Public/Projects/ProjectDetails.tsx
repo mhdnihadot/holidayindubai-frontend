@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { projectService, type Project } from '@/services/project.service';
+import { type Project } from '@/services/project.service';
+import { fetchProject as fetchProjectCached, getCachedProject } from '@/services/projectCache';
 import { adService, type Ad } from '@/services/ad.service';
 import { enquiryService } from '@/services/enquiry.service';
 import CustomSlider from '@/components/ui/CustomSlider';
+import { ProjectDetailsSkeleton } from '@/components/ui/ProjectDetailsSkeleton';
 import { toast } from 'sonner';
+import { Accessibility, CalendarDays, Check, Clock, Compass, Lock, Map as MapIcon, MapPin, MessageCircle, Navigation, Sun, MessageSquare, Phone, Send, User, ShieldCheck, Shirt, X } from 'lucide-react';
 
 const ProjectDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [project, setProject] = useState<Project | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Render straight from cache (seeded by list pages) — no loader when we already have data
+  const [project, setProject] = useState<Project | null>(() => getCachedProject(id));
+  const [isLoading, setIsLoading] = useState(() => !getCachedProject(id));
   const [ads, setAds] = useState<Ad[]>([]);
 
   // Gallery & Gesture Modal State
@@ -63,10 +67,18 @@ const ProjectDetails: React.FC = () => {
   useEffect(() => {
     const fetchProject = async () => {
       if (!id) return;
+      const cached = getCachedProject(id);
+      if (cached) {
+        setProject(cached);
+        setIsLoading(false);
+      } else {
+        setIsLoading(true);
+      }
       try {
-        const response = await projectService.getById(id);
-        const data = response.data || response;
-        setProject(data);
+        // Refresh in the background so list-seeded rows get the full detail fields
+        const data = await fetchProjectCached(id);
+        if (data) setProject(data);
+        else if (!cached) setProject(null);
       } catch (error) {
         console.error('Failed to fetch project details', error);
       } finally {
@@ -74,6 +86,13 @@ const ProjectDetails: React.FC = () => {
       }
     };
 
+    fetchProject();
+  }, [id]);
+
+  // Sidebar ads are secondary — fetch them once the page content is on screen
+  const hasProject = !!project;
+  useEffect(() => {
+    if (!hasProject || ads.length) return;
     const fetchAds = async () => {
       try {
         const response = await adService.getAll();
@@ -87,9 +106,10 @@ const ProjectDetails: React.FC = () => {
       }
     };
 
-    fetchProject();
-    fetchAds();
-  }, [id]);
+    const w = window as any;
+    const handle = w.requestIdleCallback ? w.requestIdleCallback(fetchAds, { timeout: 2000 }) : setTimeout(fetchAds, 300);
+    return () => (w.cancelIdleCallback ? w.cancelIdleCallback(handle) : clearTimeout(handle));
+  }, [hasProject, ads.length]);
 
   // Keyboard navigation for Lightbox Modal
   useEffect(() => {
@@ -126,11 +146,7 @@ const ProjectDetails: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <ProjectDetailsSkeleton />;
   }
 
   if (!project) {
@@ -177,6 +193,9 @@ const ProjectDetails: React.FC = () => {
                       <img
                         src={img}
                         alt={`${project.title} - photo ${idx + 1}`}
+                        loading={idx === 0 ? 'eager' : 'lazy'}
+                        fetchPriority={idx === 0 ? 'high' : 'auto'}
+                        decoding="async"
                         className="w-full h-full object-cover cursor-pointer"
                         onClick={() => {
                           setCurrentImageIndex(idx);
@@ -210,7 +229,7 @@ const ProjectDetails: React.FC = () => {
                   className="absolute top-4 right-4 z-20 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg text-gray-800 hover:text-red-500 transition-transform active:scale-90 focus:outline-none"
                   aria-label="Save project"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
                 </button>
@@ -295,6 +314,7 @@ const ProjectDetails: React.FC = () => {
                 <img
                   src={images[0]}
                   alt={project.title}
+                  fetchPriority="high"
                   className="w-full h-full object-cover transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300" />
@@ -323,6 +343,8 @@ const ProjectDetails: React.FC = () => {
                       <img
                         src={thumb.img}
                         alt={`${project.title} - photo ${idx + 2}`}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300" />
@@ -365,17 +387,25 @@ const ProjectDetails: React.FC = () => {
       <div className="hidden sm:block max-w-[1200px] mx-auto px-4 sm:px-6 xl:px-0 pt-2 pb-4 sm:pb-6">
         <div className="flex flex-wrap items-center gap-2 mb-3">
           {project.status && (
-            <span className="bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-lg text-xs font-medium ">
+            <span className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-800 px-2.5 py-1 rounded-lg text-xs font-medium capitalize">
+              <span className="relative flex w-2 h-2">
+                {project.status.toLowerCase() === 'active' && (
+                  <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                )}
+                <span className={`relative inline-flex w-2 h-2 rounded-full ${project.status.toLowerCase() === 'active' ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+              </span>
               {project.status}
             </span>
           )}
           {project.category && (
-            <span className="bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1 rounded-lg text-xs font-medium ">
+            <span className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-800 px-2.5 py-1 rounded-lg text-xs font-medium">
+              <Compass className="w-3.5 h-3.5 text-gray-900" strokeWidth={1.5} />
               {project.category}
             </span>
           )}
           {project.emirate && (
-            <span className="bg-[#FF1645]/5 text-[#FF1645] border border-[#FF1645]/20 px-3 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1.5 bg-[#FF1645]/10 text-[#FF1645] px-2.5 py-1 rounded-lg text-xs font-semibold">
+              <MapPin className="w-3.5 h-3.5" strokeWidth={1.5} />
               {project.emirate}
             </span>
           )}
@@ -439,7 +469,7 @@ const ProjectDetails: React.FC = () => {
                 aria-label="Previous image"
               >
                 <svg className="w-6 h-6 -ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
             )}
@@ -455,7 +485,7 @@ const ProjectDetails: React.FC = () => {
                 aria-label="Next image"
               >
                 <svg className="w-6 h-6 -mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
             )}
@@ -471,7 +501,7 @@ const ProjectDetails: React.FC = () => {
                     onClick={() => setCurrentImageIndex(idx)}
                     className={`relative w-14 h-11 sm:w-20 sm:h-14 rounded-lg overflow-hidden transition-all duration-200 focus:outline-none shrink-0 ${currentImageIndex === idx ? 'ring-2 ring-white scale-105 opacity-100 shadow-md' : 'opacity-40 hover:opacity-80'}`}
                   >
-                    <img src={img} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover" />
+                    <img src={img} alt={`Thumb ${idx + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -480,11 +510,11 @@ const ProjectDetails: React.FC = () => {
         </div>
       )}
 
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 xl:px-0 py-4 sm:py-8 pb-28 sm:pb-12">
-        <div className="grid grid-cols-1 bg-white lg:grid-cols-3 gap-8 lg:gap-12">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 xl:px-0 pt-4 sm:pt-2 pb-28 sm:pb-12">
+        <div className="grid grid-cols-1 bg-white lg:grid-cols-[minmax(0,1fr)_301.5px] gap-8 lg:gap-10">
 
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="min-w-0 space-y-8">
 
             {/* Description */}
             <section>
@@ -495,72 +525,65 @@ const ProjectDetails: React.FC = () => {
             </section>
 
             {/* Key Information Grid */}
-            <section className="bg-gray-50 rounded-lg p-5 sm:p-6 border border-gray-200">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 pb-4 sm:pb-6">Key Information</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
-                {project.location && (
-                  <div>
-                    <span className="block text-sm text-gray-500 mb-1">Location</span>
-                    <span className="font-semibold text-gray-900">{project.location}</span>
+            {(() => {
+              const whatsappDigits = project.whatsappNumber?.replace(/\D/g, '');
+              const facts = [
+                { label: 'Location', value: project.location, Icon: MapPin },
+                { label: 'Emirate', value: project.emirate, Icon: MapIcon },
+                { label: 'Duration', value: project.duration, Icon: Clock },
+                { label: 'Best time', value: project.bestTime, Icon: Sun },
+                { label: 'Best season', value: project.bestSeason, Icon: CalendarDays },
+                { label: 'Distance from city', value: project.distanceFromCity, Icon: Navigation },
+                { label: 'WhatsApp', value: project.whatsappNumber, Icon: MessageCircle, href: whatsappDigits ? `https://wa.me/${whatsappDigits}` : undefined },
+              ].filter((f) => f.value?.toString().trim());
+              if (!facts.length) return null;
+
+              return (
+                <section>
+                  <h2 className="text-xl font-semibold text-gray-900 pb-4">Key Information</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {facts.map(({ label, value, Icon, href }) => (
+                      <div key={label} className="flex items-start gap-3 p-3.5 rounded-lg border border-gray-200 bg-white">
+                        <div className="w-9 h-9 shrink-0 flex items-center justify-center rounded-lg bg-gray-100 text-gray-900">
+                          <Icon className="w-4.5 h-4.5" strokeWidth={1.5} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-gray-500">{label}</p>
+                          {href ? (
+                            <a href={href} target="_blank" rel="noopener noreferrer" className="block mt-0.5 text-sm font-semibold text-gray-900 hover:text-gray-900 transition-colors">
+                              {value}
+                            </a>
+                          ) : (
+                            <p className="mt-0.5 text-sm font-semibold text-gray-900 leading-snug">{value}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
-                {project.emirate && (
-                  <div>
-                    <span className="block text-sm text-gray-500 mb-1">Emirate</span>
-                    <span className="font-semibold text-gray-900">{project.emirate}</span>
-                  </div>
-                )}
-                {project.duration && (
-                  <div>
-                    <span className="block text-sm text-gray-500 mb-1">Duration</span>
-                    <span className="font-semibold text-gray-900">{project.duration}</span>
-                  </div>
-                )}
-                {project.bestTime && (
-                  <div>
-                    <span className="block text-sm text-gray-500 mb-1">Best Time</span>
-                    <span className="font-semibold text-gray-900">{project.bestTime}</span>
-                  </div>
-                )}
-                {project.bestSeason && (
-                  <div>
-                    <span className="block text-sm text-gray-500 mb-1">Best Season</span>
-                    <span className="font-semibold text-gray-900">{project.bestSeason}</span>
-                  </div>
-                )}
-                {project.distanceFromCity && (
-                  <div>
-                    <span className="block text-sm text-gray-500 mb-1">Distance from City</span>
-                    <span className="font-semibold text-gray-900">{project.distanceFromCity}</span>
-                  </div>
-                )}
-                {project.whatsappNumber && (
-                  <div>
-                    <span className="block text-sm text-gray-500 mb-1">WhatsApp</span>
-                    <span className="font-semibold text-gray-900">{project.whatsappNumber}</span>
-                  </div>
-                )}
-              </div>
-            </section>
+                </section>
+              );
+            })()}
 
             {/* Highlights */}
-            {project.highlights && project.highlights.length > 0 && (
+            {project.highlights && project.highlights.some((h) => h.text?.trim()) && (
               <section>
-                <h2 className="text-xl font-semibold text-gray-900 pb-3">Highlights</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {project.highlights.map((highlight, index) => (
-                    <div key={index} className="flex items-start gap-3 bg-white p-4 rounded-lg border border-gray-200 shadow-xs">
-                      <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-blue-50 p-2 rounded-lg">
+                <h2 className="text-xl font-semibold text-gray-900 pb-4">Highlights</h2>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3.5">
+                  {project.highlights.filter((h) => h.text?.trim()).map((highlight, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <span className="w-6 h-6 mt-px shrink-0 flex items-center justify-center rounded-full bg-gray-100 text-gray-900">
                         {highlight.icon ? (
-                          <img src={highlight.icon} alt="icon" className="w-full h-full object-contain" />
+                          <img src={highlight.icon} alt="" loading="lazy" className="w-3.5 h-3.5 object-contain" />
                         ) : (
-                          <span className="font-mono text-xl">✨</span>
+                          <Check className="w-3.5 h-3.5" strokeWidth={1.5} />
                         )}
-                      </div>
-                      <span className="text-gray-700 text-sm font-medium pt-1">{highlight.text}</span>
-                    </div>
+                      </span>
+                      <span className="block text-sm sm:text-[15px] text-gray-700 leading-relaxed first-letter:uppercase">
+                        {highlight.text.trim()}
+                      </span>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </section>
             )}
 
@@ -570,10 +593,10 @@ const ProjectDetails: React.FC = () => {
                 <h2 className="text-xl font-semibold text-gray-900 pb-3">Ideal For</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                   {project.idealFor.map((item, index) => (
-                    <div key={index} className="flex flex-col items-center gap-2.5 sm:gap-3 bg-white p-4 rounded-lg border border-gray-200 shadow-xs text-center">
+                    <div key={index} className="flex flex-col items-center gap-2.5 sm:gap-3 bg-white p-4 rounded-lg border border-gray-200 text-center">
                       <div className="w-12 h-12 flex items-center justify-center bg-purple-50 p-3 rounded-lg">
                         {item.icon ? (
-                          <img src={item.icon} alt="icon" className="w-full h-full object-contain" />
+                          <img src={item.icon} alt="icon" loading="lazy" className="w-full h-full object-contain" />
                         ) : (
                           <span className="font-mono text-2xl">🎯</span>
                         )}
@@ -588,120 +611,148 @@ const ProjectDetails: React.FC = () => {
             {/* Experience Steps */}
             {project.experienceSteps && project.experienceSteps.length > 0 && (
               <section>
-                <h2 className="text-xl font-semibold text-gray-900 pb-3">Experience Itinerary</h2>
-                <div className="space-y-4 sm:space-y-6">
-                  {project.experienceSteps.map((step, index) => (
-                    <div key={index} className="flex gap-3.5 sm:gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded-full font-semibold text-sm sm:text-base shadow-xs">
+                <div className="flex items-end justify-between gap-3 pb-5">
+                  <h2 className="text-xl font-semibold text-gray-900">Experience Itinerary</h2>
+                  <span className="text-xs font-medium text-gray-900 bg-gray-100 px-2.5 py-1 rounded-full">
+                    {project.experienceSteps.length} {project.experienceSteps.length === 1 ? 'step' : 'steps'}
+                  </span>
+                </div>
+                <ol>
+                  {project.experienceSteps.map((step, index) => {
+                    const isLast = index === project.experienceSteps!.length - 1;
+                    // Titles like "Step 1" just repeat the number — only show real titles
+                    const hasTitle = !!step.title?.trim() && !/^step\s*\d+$/i.test(step.title.trim());
+                    return (
+                      <li key={index} className={`group relative flex gap-4 sm:gap-5 ${isLast ? '' : 'pb-7 sm:pb-8'}`}>
+                        {!isLast && (
+                          <span aria-hidden className="absolute left-[17px] top-10 bottom-1 w-px bg-gray-200" />
+                        )}
+                        <div
+                          className={`relative z-10 w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-sm font-semibold transition-colors ${index === 0
+                            ? 'bg-gray-900 text-white'
+                            : 'bg-white text-gray-900 border border-gray-300 group-hover:bg-gray-900 group-hover:text-white group-hover:border-gray-900'
+                            }`}
+                        >
                           {index + 1}
                         </div>
-                        {index !== project.experienceSteps!.length - 1 && (
-                          <div className="w-0.5 h-full bg-blue-100 my-2"></div>
-                        )}
-                      </div>
-                      <div className="bg-white p-4 sm:p-5 rounded-lg border border-gray-200 shadow-xs flex-1 mb-2">
-                        <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-1.5">{step.title}</h4>
-                        <p className="text-sm sm:text-base text-gray-600 leading-relaxed">{step.content}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                        <div className="flex-1 min-w-0 pt-1.5">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-900">
+                            Step {String(index + 1).padStart(2, '0')}
+                          </p>
+                          {hasTitle && (
+                            <h4 className="mt-1 text-base sm:text-lg font-semibold text-gray-900">{step.title}</h4>
+                          )}
+                          <p className="mt-1.5 text-sm sm:text-[15px] text-gray-600 leading-relaxed">{step.content}</p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
               </section>
             )}
 
             {/* Practical Information */}
-            {(project.safetyAndComfort?.length || project.accessibility?.length || project.dressCode || project.nearbyLandmarks?.length) ? (
-              <section className="bg-gray-50 rounded-lg p-5 sm:p-6 md:p-8 border border-gray-200">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 sm:mb-8">Practical Information</h2>
+            {(() => {
+              const safety = project.safetyAndComfort?.filter((i) => i.title?.trim()) ?? [];
+              const access = project.accessibility?.filter((i) => i.title?.trim()) ?? [];
+              const dressRecommended = project.dressCode?.recommended?.trim();
+              const dressAvoid = project.dressCode?.avoid?.trim();
+              const hasDressCode = !!(dressRecommended || dressAvoid);
+              const landmarks = project.nearbyLandmarks?.filter((l) => l?.trim()) ?? [];
+              if (!safety.length && !access.length && !hasDressCode && !landmarks.length) return null;
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-                  {/* Safety & Comfort */}
-                  {project.safetyAndComfort && project.safetyAndComfort.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <span className="text-blue-600">🛡️</span> Safety & Comfort
-                      </h3>
-                      <ul className="space-y-4">
-                        {project.safetyAndComfort.map((item, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-white rounded shadow-sm border border-gray-100 p-1">
-                              {item.icon ? <img src={item.icon} alt="icon" className="w-full h-full object-contain" /> : '🛡️'}
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-900 text-sm">{item.title}</p>
-                              {item.description && <p className="text-gray-500 text-sm">{item.description}</p>}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+              const groups: { key: string; label: string; Icon: typeof ShieldCheck; items: typeof safety }[] = [
+                { key: 'safety', label: 'Safety & Comfort', Icon: ShieldCheck, items: safety },
+                { key: 'access', label: 'Accessibility', Icon: Accessibility, items: access },
+              ];
 
-                  {/* Accessibility */}
-                  {project.accessibility && project.accessibility.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <span className="text-blue-600">♿</span> Accessibility
-                      </h3>
-                      <ul className="space-y-4">
-                        {project.accessibility.map((item, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-white rounded shadow-sm border border-gray-100 p-1">
-                              {item.icon ? <img src={item.icon} alt="icon" className="w-full h-full object-contain" /> : '♿'}
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-900 text-sm">{item.title}</p>
-                              {item.description && <p className="text-gray-500 text-sm">{item.description}</p>}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+              return (
+                <section>
+                  <h2 className="text-xl font-semibold text-gray-900 pb-5">Practical Information</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {groups.filter((g) => g.items.length).map(({ key, label, Icon, items }) => (
+                      <div key={key} className="bg-white rounded-lg border border-gray-200 p-5">
+                        <div className="flex items-center gap-2.5 mb-4">
+                          <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 text-gray-900">
+                            <Icon className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                          </div>
+                          <h3 className="text-base font-semibold text-gray-900">{label}</h3>
+                        </div>
+                        <ul className="space-y-3.5">
+                          {items.map((item, index) => (
+                            <li key={index} className="flex items-start gap-3">
+                              {item.icon ? (
+                                <img src={item.icon} alt="" loading="lazy" className="w-5 h-5 mt-0.5 shrink-0 object-contain" />
+                              ) : (
+                                <Check className="w-4 h-4 mt-0.5 shrink-0 text-gray-900" strokeWidth={1.5} />
+                              )}
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-900">{item.title}</p>
+                                {item.description && <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{item.description}</p>}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
 
-                  {/* Dress Code & Landmarks */}
-                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 mt-4 pt-8 border-t border-gray-200">
-                    {project.dressCode && (
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                          <span className="text-blue-600">👕</span> Dress Code
-                        </h3>
+                    {hasDressCode && (
+                      <div className="bg-white rounded-lg border border-gray-200 p-5">
+                        <div className="flex items-center gap-2.5 mb-4">
+                          <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 text-gray-900">
+                            <Shirt className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                          </div>
+                          <h3 className="text-base font-semibold text-gray-900">Dress Code</h3>
+                        </div>
                         <div className="space-y-3">
-                          {project.dressCode.recommended && (
-                            <div className="bg-green-50 p-3 rounded-lg border border-green-100">
-                              <span className="text-xs font-bold text-green-800 uppercase tracking-wider block mb-1">Recommended</span>
-                              <p className="text-green-900 text-sm">{project.dressCode.recommended}</p>
+                          {dressRecommended && (
+                            <div className="flex items-start gap-3">
+                              <div className="w-5 h-5 mt-0.5 shrink-0 flex items-center justify-center rounded-full bg-gray-900 text-white">
+                                <Check className="w-3 h-3" strokeWidth={1.5} />
+                              </div>
+                              <div>
+                                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Recommended</p>
+                                <p className="text-sm text-gray-700 mt-0.5 leading-relaxed">{dressRecommended}</p>
+                              </div>
                             </div>
                           )}
-                          {project.dressCode.avoid && (
-                            <div className="bg-red-50 p-3 rounded-lg border border-red-100">
-                              <span className="text-xs font-bold text-red-800 uppercase tracking-wider block mb-1">Avoid</span>
-                              <p className="text-red-900 text-sm">{project.dressCode.avoid}</p>
+                          {dressAvoid && (
+                            <div className="flex items-start gap-3">
+                              <div className="w-5 h-5 mt-0.5 shrink-0 flex items-center justify-center rounded-full border border-gray-300 text-gray-500">
+                                <X className="w-3 h-3" strokeWidth={1.5} />
+                              </div>
+                              <div>
+                                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Avoid</p>
+                                <p className="text-sm text-gray-700 mt-0.5 leading-relaxed">{dressAvoid}</p>
+                              </div>
                             </div>
                           )}
                         </div>
                       </div>
                     )}
 
-                    {project.nearbyLandmarks && project.nearbyLandmarks.length > 0 && (
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                          <span className="text-blue-600">📍</span> Nearby Landmarks
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
-                          {project.nearbyLandmarks.map((landmark, index) => (
-                            <span key={index} className="bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm shadow-sm">
-                              {landmark}
-                            </span>
-                          ))}
+                    {landmarks.length > 0 && (
+                      <div className="bg-white rounded-lg border border-gray-200 p-5">
+                        <div className="flex items-center gap-2.5 mb-4">
+                          <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 text-gray-900">
+                            <MapPin className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                          </div>
+                          <h3 className="text-base font-semibold text-gray-900">Nearby Landmarks</h3>
                         </div>
+                        <ul className="divide-y divide-gray-100">
+                          {landmarks.map((landmark, index) => (
+                            <li key={index} className="flex items-center gap-2.5 py-2.5 first:pt-0 last:pb-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-gray-900 shrink-0" />
+                              <span className="text-sm text-gray-700">{landmark}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     )}
                   </div>
-                </div>
-              </section>
-            ) : null}
+                </section>
+              );
+            })()}
 
             {/* Gallery */}
             {/* {project.images && project.images.length > 1 && (
@@ -728,80 +779,93 @@ const ProjectDetails: React.FC = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="sticky top-24 space-y-6">
-              <div id="property-contact-sidebar" className="bg-white rounded-xl shadow-xs border border-gray-200 p-5 sm:p-6">
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 pb-1">Interested in this property?</h3>
-                <p className="text-gray-500 mb-5 text-xs sm:text-sm leading-relaxed">
-                  Contact our expert agents today to schedule a viewing or request more information.
+          <div className="w-full lg:max-w-[301.5px] space-y-6">
+            <div className="sticky top-18 space-y-6">
+              <div id="property-contact-sidebar" className="bg-white rounded-lg border  border-gray-200 p-4 sm:p-4">
+                <h3 className="text-base font-semibold text-gray-900">Interested in this experience?</h3>
+                <p className="text-xs text-gray-500 mt-0.5 mb-4 leading-relaxed">
+                  Share your details and our team will get back to you.
                 </p>
 
                 {enquirySuccess ? (
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center my-2 space-y-2">
-                    <div className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto shadow-sm">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
+                  <div className="rounded-lg bg-gray-50 border border-gray-200 p-4 text-center space-y-1.5">
+                    <div className="w-9 h-9 mx-auto rounded-full bg-emerald-500 text-white flex items-center justify-center">
+                      <Check className="w-5 h-5" strokeWidth={1.5} />
                     </div>
-                    <h4 className="font-semibold text-green-900 text-base">Enquiry Submitted!</h4>
-                    <p className="text-xs text-green-700 leading-normal">
-                      Thank you! Your enquiry has been received. Our tourism specialist will get back to you shortly.
+                    <h4 className="text-sm font-semibold text-gray-900">Enquiry sent</h4>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      Thank you! Our tourism specialist will get back to you shortly.
                     </p>
                     <button
                       type="button"
                       onClick={() => setEnquirySuccess(false)}
-                      className="text-xs font-semibold text-green-800 hover:text-green-900 underline pt-1"
+                      className="text-xs font-medium text-gray-900 hover:underline pt-1"
                     >
                       Send another enquiry
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleEnquirySubmit} className="space-y-4">
+                  <form onSubmit={handleEnquirySubmit} className="space-y-3">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                        Your Name <span className="text-red-500">*</span>
+                      <label htmlFor="enquiry-name" className="block text-xs font-medium text-gray-700 mb-1">
+                        Full name <span className="text-gray-900">*</span>
                       </label>
-                      <input
-                        type="text"
-                        required
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Enter your full name"
-                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
-                      />
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" strokeWidth={1.5} />
+                        <input
+                          id="enquiry-name"
+                          type="text"
+                          required
+                          autoComplete="name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Your name"
+                          className="w-full h-10 pl-9 pr-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 transition-colors"
+                        />
+                      </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                        Phone Number (WhatsApp / Call) <span className="text-red-500">*</span>
+                      <label htmlFor="enquiry-phone" className="block text-xs font-medium text-gray-700 mb-1">
+                        Phone <span className="text-gray-400 font-normal">(WhatsApp / Call)</span> <span className="text-gray-900">*</span>
                       </label>
-                      <input
-                        type="tel"
-                        required
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="Enter your contact number"
-                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
-                      />
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" strokeWidth={1.5} />
+                        <input
+                          id="enquiry-phone"
+                          type="tel"
+                          required
+                          autoComplete="tel"
+                          inputMode="tel"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="+971 50 000 0000"
+                          className="w-full h-10 pl-9 pr-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 transition-colors"
+                        />
+                      </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                        What would you like to know? (Optional)
+                      <label htmlFor="enquiry-message" className="block text-xs font-medium text-gray-700 mb-1">
+                        Message <span className="text-gray-400 font-normal">(optional)</span>
                       </label>
-                      <textarea
-                        rows={3}
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        placeholder="E.g., group booking rates, itinerary details, date availability..."
-                        className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all resize-none"
-                      />
+                      <div className="relative">
+                        <MessageSquare className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" strokeWidth={1.5} />
+                        <textarea
+                          id="enquiry-message"
+                          rows={3}
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
+                          placeholder="Dates, group size, questions…"
+                          className="w-full pl-9 pr-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 transition-colors py-2 resize-none"
+                        />
+                      </div>
                     </div>
 
                     <button
                       type="submit"
                       disabled={isSubmittingEnquiry}
-                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white py-3 px-4 rounded-lg font-semibold transition-all shadow-md shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-2"
+                      className="w-full h-11 bg-gray-900 hover:bg-gray-800 disabled:opacity-70 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
                     >
                       {isSubmittingEnquiry ? (
                         <>
@@ -809,18 +873,26 @@ const ProjectDetails: React.FC = () => {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                           </svg>
-                          <span>Submitting...</span>
+                          <span>Sending…</span>
                         </>
                       ) : (
-                        <span>Submit Enquiry</span>
+                        <>
+                          <Send className="w-4 h-4" strokeWidth={1.5} />
+                          <span>Send Enquiry</span>
+                        </>
                       )}
                     </button>
+
+                    <p className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
+                      <Lock className="w-3 h-3" strokeWidth={1.5} />
+                      We only use your number to reply to this enquiry
+                    </p>
                   </form>
                 )}
               </div>
 
               {/* Featured Advertisements Carousel Section */}
-              {ads.length > 0 && <CustomSlider images={ads} />}
+              {ads.length > 0 && <CustomSlider images={ads} imageClassName="lg:object-contain!" />}
             </div>
           </div>
 
@@ -842,7 +914,7 @@ const ProjectDetails: React.FC = () => {
               sidebar.scrollIntoView({ behavior: 'smooth' });
             }
           }}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-lg text-sm whitespace-nowrap shadow-md shadow-blue-600/20 active:scale-95 transition-all shrink-0"
+          className="bg-gray-900 hover:bg-gray-800 text-white font-semibold px-5 py-2.5 rounded-lg text-sm whitespace-nowrap active:scale-95 transition-all shrink-0"
         >
           Register Interest
         </button>
