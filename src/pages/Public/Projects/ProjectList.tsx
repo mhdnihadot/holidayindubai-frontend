@@ -169,9 +169,9 @@ const ProjectList: React.FC = () => {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-y-5 sm:gap-x-5 sm:gap-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-5 sm:gap-x-5 sm:gap-y-6">
             {Array.from({ length: 8 }).map((_, i) => (
-              <ExperienceCardSkeleton key={i} compact />
+              <ExperienceCardSkeleton key={i} />
             ))}
           </div>
         ) : projects.length === 0 ? (
@@ -190,14 +190,13 @@ const ProjectList: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-y-5 sm:gap-x-5 sm:gap-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-5 sm:gap-x-5 sm:gap-y-6">
             {projects.map((project) => (
               <ExperienceCard
                 key={project.id}
                 project={project}
                 isSaved={wishlist.includes(project.id!)}
                 onToggleWishlist={toggleWishlist}
-                compact
               />
             ))}
           </div>
