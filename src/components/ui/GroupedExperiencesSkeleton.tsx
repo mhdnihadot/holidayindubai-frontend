@@ -22,7 +22,7 @@ export const GroupedExperiencesSkeleton: React.FC<{ sections?: number; cards?: n
         {/* Same widths as the real scrolling row — next card peeks in on mobile */}
         <div className="flex gap-4 sm:gap-6 overflow-hidden -mx-4 px-4 sm:mx-0 sm:px-0">
           {Array.from({ length: cards }).map((_, i) => (
-            <div key={i} className="w-[72%] sm:w-[calc((100%-1.5rem)/2.2)] lg:w-[calc((100%-3rem)/3)] xl:w-[calc((100%-4.5rem)/4)] flex-none">
+            <div key={i} className="w-[calc((100%-1rem)/2.15)] sm:w-[calc((100%-1.5rem)/2.2)] lg:w-[calc((100%-3rem)/3)] xl:w-[calc((100%-4.5rem)/4)] flex-none">
               <ExperienceCardSkeleton />
             </div>
           ))}

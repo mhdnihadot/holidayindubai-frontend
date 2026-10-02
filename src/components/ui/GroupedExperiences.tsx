@@ -79,8 +79,8 @@ const CategoryRow: React.FC<CategoryRowProps> = ({ category, items, wishlist, on
     if (el) el.scrollBy({ left: dir * el.clientWidth * 0.9, behavior: 'smooth' });
   };
 
-  // Mobile: ~72% wide so the next card peeks in. Desktop: exactly 4 per view.
-  const itemWidth = 'w-[72%] sm:w-[calc((100%-1.5rem)/2.2)] lg:w-[calc((100%-3rem)/3)] xl:w-[calc((100%-4.5rem)/4)]';
+  // Mobile: 2 cards visible with the next one peeking in. Desktop: exactly 4 per view.
+  const itemWidth = 'w-[calc((100%-1rem)/2.15)] sm:w-[calc((100%-1.5rem)/2.2)] lg:w-[calc((100%-3rem)/3)] xl:w-[calc((100%-4.5rem)/4)]';
 
   return (
     <div>
