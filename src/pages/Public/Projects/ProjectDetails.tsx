@@ -8,9 +8,10 @@ import { ProjectDetailsSkeleton } from '@/components/ui/ProjectDetailsSkeleton';
 import { CategoryRow } from '@/components/ui/GroupedExperiences';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useSeo } from '@/hooks/useSeo';
+import { getMapEmbedUrl, getMapOpenUrl } from '@/utils/googleMap';
 import { projectService } from '@/services/project.service';
 import { seedProjects } from '@/services/projectCache';
-import { Accessibility, CalendarDays, Check, Clock, Compass, Map as MapIcon, MapPin, MessageCircle, Navigation, Sun, Phone, Globe, Heart, ShieldCheck } from 'lucide-react';
+import { Accessibility, CalendarDays, Check, Clock, Compass, Map as MapIcon, MapPin, MessageCircle, Navigation, Sun, Phone, Globe, Heart, ExternalLink, ShieldCheck } from 'lucide-react';
 
 const ProjectDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -773,6 +774,48 @@ const ProjectDetails: React.FC = () => {
               );
             })()}
 
+            {/* Location map — built from googleMapUrl (only real Google Maps embed URLs are used) */}
+            {(() => {
+              const embedUrl = getMapEmbedUrl(project.googleMapUrl);
+              if (!embedUrl) return null;
+              const openUrl = getMapOpenUrl(embedUrl, [project.title, project.location, project.emirate].filter(Boolean).join(', '));
+              return (
+                <section>
+                  <div className="flex items-end justify-between gap-3 pb-3">
+                    <div className="min-w-0">
+                      <h2 className="text-xl font-semibold text-gray-900">Location</h2>
+                      {(project.location || project.emirate) && (
+                        <p className="text-sm text-gray-500 mt-0.5 truncate">
+                          {[project.location, project.emirate].filter(Boolean).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                    {openUrl && (
+                      <a
+                        href={openUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 inline-flex items-center gap-1.5 text-sm font-medium text-gray-900 hover:underline underline-offset-2"
+                      >
+                        Open in Maps
+                        <ExternalLink className="w-4 h-4" strokeWidth={1.5} />
+                      </a>
+                    )}
+                  </div>
+                  <div className="relative w-full h-64 sm:h-80 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+                    <iframe
+                      src={embedUrl}
+                      title={`Map of ${project.title}`}
+                      className="absolute inset-0 w-full h-full border-0"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      allowFullScreen
+                    />
+                  </div>
+                </section>
+              );
+            })()}
+
             {/* Gallery */}
             {/* {project.images && project.images.length > 1 && (
               <section>
@@ -803,7 +846,7 @@ const ProjectDetails: React.FC = () => {
               <div id="property-contact-sidebar" className="bg-white !mb-0 rounded-lg border border-gray-200 p-3.5 sm:p-5">
                 <h3 className="text-base font-semibold text-gray-900">Interested in this experience?</h3>
                 <p className="text-xs text-gray-500 mt-0.5 mb-4 leading-relaxed">
-                  Chat on WhatsApp, call us, or visit the website.
+                  Explore more or get in touch with the provider.
                 </p>
                 <div className="flex items-center gap-2.5">
                   <ContactButtons />
