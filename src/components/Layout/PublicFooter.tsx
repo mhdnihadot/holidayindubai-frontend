@@ -36,10 +36,10 @@ const footerGroups: { title: string; links: { to: string; label: string }[] }[] 
 
 const PublicFooter: React.FC = () => {
   return (
-    <footer className="bg-white pt-6 sm:pt-12 pb-6 border-t border-gray-100 font-sans">
+    <footer className="bg-white pt-6 sm:pt-12 pb-3 sm:pb-6 border-t border-gray-100 font-sans">
       <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 xl:px-0">
         {/* Mobile footer: compact header row, store badges, collapsible link groups */}
-        <div className="md:hidden mb-6">
+        <div className="md:hidden mb-4">
           <div className="flex items-center justify-between gap-4 pb-5">
             <Link to="/" className="block focus:outline-none">
               <img src={logo1} alt="Holiday InDubai" className="h-9 w-auto object-contain" />
@@ -171,8 +171,8 @@ const PublicFooter: React.FC = () => {
         </div>
 
         {/* Copyright Bottom Bar */}
-        <div className="pt-6 pb-2 border-t border-gray-100 flex flex-row items-center justify-between text-[11px] sm:text-xs text-gray-400 gap-3">
-          <p className="whitespace-nowrap">© {new Date().getFullYear()} holidayindubai.com<span className="hidden sm:inline">. All rights reserved.</span></p>
+        <div className="pt-4 sm:pt-6 pb-1 sm:pb-2 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-center sm:justify-between text-center sm:text-left text-[11px] sm:text-xs text-gray-400 gap-1.5 sm:gap-3">
+          <p className="whitespace-nowrap">© {new Date().getFullYear()} holidayindubai.com. All rights reserved.</p>
           <div className="flex items-center gap-4 shrink-0">
             <span className="whitespace-nowrap">
               Powered by{' '}
