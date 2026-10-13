@@ -37,6 +37,8 @@ export const useEditProjectHandler = () => {
       experienceSteps: [] as { title: string; content: string }[],
       platformUrl: '',
       whatsappNumber: '',
+      phoneNumber: '',
+      partner: '',
       status: 'active' as 'active' | 'inactive' | 'completed',
       images: [] as string[],
     },
@@ -88,6 +90,8 @@ export const useEditProjectHandler = () => {
             experienceSteps: project.experienceSteps || [],
             platformUrl: project.platformUrl || '',
             whatsappNumber: project.whatsappNumber || '',
+            phoneNumber: project.phoneNumber || '',
+            partner: project.partner || '',
             status: project.status || 'active',
             images: project.images || [],
           });

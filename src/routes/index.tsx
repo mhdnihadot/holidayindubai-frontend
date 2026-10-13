@@ -19,10 +19,12 @@ const CategoryList = lazy(() => import('@/pages/Categories/CategoryList'));
 const AddCategory = lazy(() => import('@/pages/Categories/AddCategory'));
 const Users = lazy(() => import('@/pages/Users/Users'));
 const Enquiries = lazy(() => import('@/pages/Enquiries/Enquiries'));
+const Partners = lazy(() => import('@/pages/Partners/Partners'));
 const Profile = lazy(() => import('@/pages/Profile/Profile'));
 const About = lazy(() => import('@/pages/Public/Static/About'));
 const PrivacyPolicy = lazy(() => import('@/pages/Public/Static/PrivacyPolicy'));
 const Terms = lazy(() => import('@/pages/Public/Static/Terms'));
+const PartnerLegal = lazy(() => import('@/pages/Public/Static/PartnerLegal'));
 
 const PageFallback = () => (
   <div className="flex justify-center items-center min-h-[60vh]">
@@ -44,6 +46,8 @@ export const router = createBrowserRouter([
       { path: 'about', element: withSuspense(<About />) },
       { path: 'privacy', element: withSuspense(<PrivacyPolicy />) },
       { path: 'terms', element: withSuspense(<Terms />) },
+      { path: 'partner/privacy', element: withSuspense(<PartnerLegal page="privacy" />) },
+      { path: 'partner/terms', element: withSuspense(<PartnerLegal page="terms" />) },
       { path: 'login', element: withSuspense(<UserLogin />) },
     ],
   },
@@ -70,6 +74,7 @@ export const router = createBrowserRouter([
           { path: 'categories/new', element: withSuspense(<AddCategory />) },
           { path: 'users', element: withSuspense(<Users />) },
           { path: 'enquiries', element: withSuspense(<Enquiries />) },
+          { path: 'partners/*', element: withSuspense(<Partners />) },
           { path: 'profile', element: withSuspense(<Profile />) },
         ],
       },

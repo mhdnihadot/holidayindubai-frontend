@@ -3,6 +3,7 @@ import { DynamicIconList } from '@/components/DynamicForm/DynamicIconList';
 import { DynamicStepsList } from '@/components/DynamicForm/DynamicStepsList';
 import { GoogleMapPreviewInput } from '@/components/DynamicForm/GoogleMapPreviewInput';
 import { CategoryAutocompleteInput } from '@/components/DynamicForm/CategoryAutocompleteInput';
+import { PartnerSelectInput } from '@/components/DynamicForm/PartnerSelectInput';
 
 export const projectFormSchema: FormSchema = [
   {
@@ -78,6 +79,19 @@ export const projectFormSchema: FormSchema = [
         label: 'WhatsApp Number',
         type: 'text',
         placeholder: 'E.g., +971501234567',
+      },
+      {
+        name: 'phoneNumber',
+        label: 'Call Number',
+        type: 'text',
+        placeholder: 'E.g., +97141234567',
+        description: 'Used by the Call button. Leave empty to call the WhatsApp number.',
+      },
+      {
+        name: 'partner',
+        label: 'HID PARTNER',
+        type: 'custom',
+        customRender: ({ value, onChange }) => <PartnerSelectInput value={value} onChange={onChange} />,
       },
       {
         name: 'distanceFromCity',

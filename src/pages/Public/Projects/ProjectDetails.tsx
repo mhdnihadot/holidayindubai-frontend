@@ -11,6 +11,7 @@ import { useSeo } from '@/hooks/useSeo';
 import { getMapEmbedUrl, getMapOpenUrl } from '@/utils/googleMap';
 import { projectService } from '@/services/project.service';
 import { seedProjects } from '@/services/projectCache';
+import { trackActivity } from '@/utils/activityTracking';
 import { Accessibility, CalendarDays, Check, Clock, Compass, Map as MapIcon, MapPin, MessageCircle, Navigation, Sun, Phone, Globe, Heart, ExternalLink, ShieldCheck } from 'lucide-react';
 
 const ProjectDetails: React.FC = () => {
@@ -60,6 +61,12 @@ const ProjectDetails: React.FC = () => {
 
     fetchProject();
   }, [id]);
+
+  // One page view per activity opened (server dedupes repeat views from the same browser)
+  const hasLoadedProject = !!project;
+  useEffect(() => {
+    if (hasLoadedProject) trackActivity(id, 'view');
+  }, [id, hasLoadedProject]);
 
   const { wishlist, toggleWishlist } = useWishlist();
 
@@ -164,13 +171,14 @@ const ProjectDetails: React.FC = () => {
     }
   };
 
-  // Contact: WhatsApp + Call both use the project's whatsappNumber. Buttons always show;
-  // when a project has no number they simply do nothing.
+  // Contact: WhatsApp uses the project's whatsappNumber; Call uses phoneNumber and falls back to
+  // the WhatsApp number. Buttons always show; when a project has no number they simply do nothing.
   const contactDigits = project?.whatsappNumber?.replace(/\D/g, '') || '';
   const whatsappHref = contactDigits
     ? `https://wa.me/${contactDigits}?text=${encodeURIComponent(`Hi, I'm interested in ${project?.title ?? 'this experience'}`)}`
     : undefined;
-  const callHref = contactDigits ? `tel:+${contactDigits}` : undefined;
+  const phoneNumber = project?.phoneNumber?.replace(/[^\d+]/g, '') || '';
+  const callHref = phoneNumber ? `tel:${phoneNumber}` : contactDigits ? `tel:+${contactDigits}` : undefined;
 
   // Website = the project's platformUrl (link stored by the admin)
   const websiteHref = project?.platformUrl?.trim() || undefined;
@@ -182,16 +190,19 @@ const ProjectDetails: React.FC = () => {
         size === 'sm' ? 'w-10 h-10' : 'flex-1 h-11'
       } ${enabled ? 'hover:bg-gray-800 active:bg-gray-700' : 'cursor-default'}`;
     const iconCls = size === 'sm' ? 'w-[18px] h-[18px]' : 'w-5 h-5';
-    const guard = (enabled: boolean) => (e: React.MouseEvent) => { if (!enabled) e.preventDefault(); };
+    const guard = (enabled: boolean, type: 'whatsapp' | 'call' | 'website') => (e: React.MouseEvent) => {
+      if (!enabled) e.preventDefault();
+      else trackActivity(id, type);
+    };
     return (
       <>
-        <a href={whatsappHref} target={whatsappHref ? '_blank' : undefined} rel="noopener noreferrer" onClick={guard(!!whatsappHref)} className={btn(!!whatsappHref)} aria-label="Chat on WhatsApp" title="WhatsApp">
+        <a href={whatsappHref} target={whatsappHref ? '_blank' : undefined} rel="noopener noreferrer" onClick={guard(!!whatsappHref, 'whatsapp')} className={btn(!!whatsappHref)} aria-label="Chat on WhatsApp" title="WhatsApp">
           <svg className={iconCls} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
         </a>
-        <a href={callHref} onClick={guard(!!callHref)} className={btn(!!callHref)} aria-label="Call" title="Call">
+        <a href={callHref} onClick={guard(!!callHref, 'call')} className={btn(!!callHref)} aria-label="Call" title="Call">
           <Phone className={iconCls} strokeWidth={1.5} />
         </a>
-        <a href={websiteHref} target={websiteHref ? '_blank' : undefined} rel="noopener noreferrer" onClick={guard(!!websiteHref)} className={btn(!!websiteHref)} aria-label="Visit website" title="Visit website">
+        <a href={websiteHref} target={websiteHref ? '_blank' : undefined} rel="noopener noreferrer" onClick={guard(!!websiteHref, 'website')} className={btn(!!websiteHref)} aria-label="Visit website" title="Visit website">
           <Globe className={iconCls} strokeWidth={1.5} />
         </a>
       </>
@@ -597,7 +608,7 @@ const ProjectDetails: React.FC = () => {
                         <div className="min-w-0">
                           <p className="text-xs text-gray-500">{label}</p>
                           {href ? (
-                            <a href={href} target="_blank" rel="noopener noreferrer" className="block mt-0.5 text-sm font-semibold text-gray-900 hover:text-gray-900 transition-colors">
+                            <a href={href} target="_blank" rel="noopener noreferrer" onClick={() => label === 'WhatsApp' && trackActivity(id, 'whatsapp')} className="block mt-0.5 text-sm font-semibold text-gray-900 hover:text-gray-900 transition-colors">
                               {value}
                             </a>
                           ) : (
@@ -843,9 +854,9 @@ const ProjectDetails: React.FC = () => {
           {/* Sidebar */}
           <div className="w-full lg:max-w-[301.5px] space-y-6">
             <div className="sticky top-18 space-y-3">
-              <div id="property-contact-sidebar" className="bg-white !mb-0 rounded-lg border border-gray-200 p-3.5 sm:p-5">
+              <div id="property-contact-sidebar" className="bg-white !mb-0 rounded-lg border border-gray-200 p-3.5 sm:p-5 lg:px-4">
                 <h3 className="text-base font-semibold text-gray-900">Interested in this experience?</h3>
-                <p className="text-xs text-gray-500 mt-0.5 mb-4 leading-relaxed">
+                <p className="text-xs lg:text-[11.5px] lg:whitespace-nowrap text-gray-500 mt-0.5 mb-4 leading-relaxed">
                   Explore more or get in touch with the provider.
                 </p>
                 <div className="flex items-center gap-2.5">

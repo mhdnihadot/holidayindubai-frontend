@@ -232,6 +232,14 @@ export const IconEnquiries = ({ className = '' }) => (
   </svg>
 );
 
+export const IconPartners = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="7" width="18" height="13" rx="2"></rect>
+    <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+    <path d="M3 13h18"></path>
+  </svg>
+);
+
 export const IconAds = ({ className = '' }) => (
   <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M11 6l9-4v16l-9-4"></path>

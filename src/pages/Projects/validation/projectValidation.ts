@@ -67,5 +67,7 @@ export const projectValidationSchema = Yup.object().shape({
   ).nullable(),
   platformUrl: Yup.string().nullable(),
   whatsappNumber: Yup.string().nullable(),
+  phoneNumber: Yup.string().nullable(),
+  partner: Yup.string().nullable(),
   images: Yup.array().of(Yup.string()),
 });

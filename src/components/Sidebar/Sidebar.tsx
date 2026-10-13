@@ -13,6 +13,7 @@ import {
   IconUsers,
   IconEnquiries,
   IconAds,
+  IconPartners,
   IconMenu,
 } from './Icons';
 
@@ -29,6 +30,14 @@ const MAIN_MENU: SidebarItemConfig[] = [
   { label: 'Dashboard', path: '/dashboard', icon: IconDashboard },
   { label: 'Users', path: '/dashboard/users', icon: IconUsers },
   { label: 'Enquiries', path: '/dashboard/enquiries', icon: IconEnquiries },
+  {
+    label: 'Partners',
+    icon: IconPartners,
+    children: [
+      { label: 'Listing', path: '/dashboard/partners', icon: IconListing },
+      { label: 'Change Requests', path: '/dashboard/partners/requests', icon: IconListing },
+    ],
+  },
   {
     label: 'Categories',
     icon: IconMenu,

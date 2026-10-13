@@ -23,6 +23,8 @@ export interface Project {
   experienceSteps?: { title: string; content: string }[];
   platformUrl?: string;
   whatsappNumber?: string;
+  phoneNumber?: string;
+  partner?: string | null;
   status: 'active' | 'inactive' | 'completed';
   images: string[];
   createdAt: string;

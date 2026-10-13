@@ -34,6 +34,8 @@ export const useAddProjectHandler = () => {
       experienceSteps: [],
       platformUrl: '',
       whatsappNumber: '',
+      phoneNumber: '',
+      partner: '',
       status: 'active' as 'active' | 'inactive' | 'completed',
       images: [],
     },
