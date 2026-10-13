@@ -25,6 +25,7 @@ const About = lazy(() => import('@/pages/Public/Static/About'));
 const PrivacyPolicy = lazy(() => import('@/pages/Public/Static/PrivacyPolicy'));
 const Terms = lazy(() => import('@/pages/Public/Static/Terms'));
 const PartnerLegal = lazy(() => import('@/pages/Public/Static/PartnerLegal'));
+const PartnerSupport = lazy(() => import('@/pages/Public/Static/PartnerSupport'));
 
 const PageFallback = () => (
   <div className="flex justify-center items-center min-h-[60vh]">
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
       { path: 'terms', element: withSuspense(<Terms />) },
       { path: 'partner/privacy', element: withSuspense(<PartnerLegal page="privacy" />) },
       { path: 'partner/terms', element: withSuspense(<PartnerLegal page="terms" />) },
+      { path: 'partner/support', element: withSuspense(<PartnerSupport />) },
       { path: 'login', element: withSuspense(<UserLogin />) },
     ],
   },

@@ -1,8 +1,8 @@
 // HID PARTNER app — Privacy Policy and Terms (linked from the app and its store listings).
-// Support contact is shown once filled in here.
+// Partner support contact (also in the HID PARTNER app: src/config.ts SUPPORT)
 export const PARTNER_SUPPORT = {
-  email: '',
-  phone: '',
+  email: 'holidayindubaihid@gmail.com',
+  phone: '+971 54 287 7328',
 };
 
 const contactLine = () => {
